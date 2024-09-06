@@ -20,18 +20,18 @@ func ComparePasswords(hashedPassword, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
 
-func ValidatePassword(password string) (bool, error) {
+func ValidatePassword(password string) error {
 	if len(password) < 8 || len(password) > 30 {
-		return false, errors.New("password must be between 8 and 30 characters")
+		return errors.New("password must be between 8 and 30 characters")
 	}
 	if !containsUppercase(password) || !containsLowercase(password) {
-		return false, errors.New("password must contain at least one uppercase and one lowercase letter")
+		return errors.New("password must contain at least one uppercase and one lowercase letter")
 	}
 	if !containsDigit(password) {
-		return false, errors.New("password must contain at least one digit")
+		return errors.New("password must contain at least one digit")
 	}
 
-	return true, nil
+	return nil
 }
 
 func containsUppercase(s string) bool {

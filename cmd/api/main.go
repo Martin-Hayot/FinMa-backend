@@ -7,6 +7,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	_ "github.com/joho/godotenv/autoload"
 )
 
@@ -22,6 +24,9 @@ func main() {
 
 	server.RegisterFiberRoutes()
 
+	server.Use(logger.New())
+	server.Use(cors.New())
+
 	// Generate an access token
 	payload := Payload{
 		UserID:   1,
@@ -33,8 +38,15 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("cannot generate access token: %s", err))
 	}
-
 	fmt.Printf("Access Token: %s\n", token)
+
+	verifiedTokenPayload, err := utils.VerifyAccessToken(token)
+
+	if err != nil {
+		panic(fmt.Sprintf("cannot verify access token: %v", err))
+	}
+
+	fmt.Printf("Verified Token Payload: %v\n", verifiedTokenPayload)
 
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
 	err = server.Listen(fmt.Sprintf(":%d", port))

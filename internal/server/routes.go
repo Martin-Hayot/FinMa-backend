@@ -14,10 +14,14 @@ import (
 var validate = validator.New()
 
 func (s *FiberServer) RegisterFiberRoutes() {
-	s.App.Get("/", s.HelloWorldHandler)
-	s.App.Get("/health", s.healthHandler)
-	s.App.Get("/users", s.GetUsersHandler)
-	s.App.Post("/users", s.CreateUserHandler)
+	api := s.Group("/api")
+	auth := api.Group("/auth")
+	api.Get("/", s.HelloWorldHandler)
+	api.Get("/health", s.healthHandler)
+	auth.Post("/signup", s.SignUpHandler)
+	auth.Post("/login", s.SignUpHandler)
+	auth.Post("/logout", s.SignUpHandler)
+	api.Post("/users", s.SignUpHandler)
 }
 
 func (s *FiberServer) HelloWorldHandler(c *fiber.Ctx) error {
@@ -38,7 +42,13 @@ func (s *FiberServer) GetUsersHandler(c *fiber.Ctx) error {
 	return c.JSON(db)
 }
 
-func (s *FiberServer) CreateUserHandler(c *fiber.Ctx) error {
+// SignUpHandler is a handler that creates a new user.
+// It expects a JSON object with the following fields:
+// - email: the user's email address
+// - password: the user's password
+// - first_name: the user's first name
+// - last_name: the user's last name
+func (s *FiberServer) SignUpHandler(c *fiber.Ctx) error {
 	var user database.User
 
 	if err := c.BodyParser(&user); err != nil {
@@ -55,6 +65,10 @@ func (s *FiberServer) CreateUserHandler(c *fiber.Ctx) error {
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
 
+	if err := utils.ValidatePassword(user.Password); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
 	hashedPassword, err := utils.HashPassword(user.Password)
 	if err != nil {
 		log.Println(err)
@@ -62,7 +76,6 @@ func (s *FiberServer) CreateUserHandler(c *fiber.Ctx) error {
 	}
 	user.Password = hashedPassword
 
-	// Save the user to the database
 	if err := s.db.CreateUser(user); err != nil {
 		log.Println(err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
