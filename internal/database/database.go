@@ -24,6 +24,15 @@ type Service interface {
 	// Close terminates the database connection.
 	// It returns an error if the connection cannot be closed.
 	Close() error
+
+	// GetUsers returns a list of users from the database.
+	GetUsers() []User
+
+	// GetUser returns a user from the database.
+	GetUser(id int) User
+
+	// CreateUser creates a new user in the database.
+	CreateUser(user User) error
 }
 
 type service struct {
@@ -57,11 +66,15 @@ func New() Service {
 		Conn: db,
 	}), &gorm.Config{})
 
-	gormDB.AutoMigrate(&User{}, &BankAccount{}, &Transactions{}, &Budget{}, &Notification{})
-
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error connecting with gorm: ", err)
 	}
+
+	err = gormDB.AutoMigrate(&User{}, &BankAccount{}, &Transaction{}, &Budget{}, &Notification{})
+	if err != nil {
+		log.Fatal("Error with migration: ", err)
+	}
+
 	dbInstance = &service{
 		db:     gormDB,
 		baseDB: db,
@@ -127,4 +140,38 @@ func (s *service) Health() map[string]string {
 func (s *service) Close() error {
 	log.Printf("Disconnected from database: %s", database)
 	return s.baseDB.Close()
+}
+
+func (s *service) Migrate() error {
+	err := s.db.AutoMigrate(&User{}, &BankAccount{}, &Transaction{}, &Budget{}, &Notification{})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) GetUsers() []User {
+	var users []User
+	s.db.Find(&users)
+	return users
+}
+
+func (s *service) GetUser(id int) User {
+	var user User
+	s.db.First(&user, id)
+	return user
+}
+
+func (s *service) CreateUser(user User) error {
+	// Check if user already exists
+	var existingUser User
+	result := s.db.Where("email = ?", user.Email).First(&existingUser)
+	if result.RowsAffected > 0 {
+		return fmt.Errorf("user with email %s already exists", user.Email)
+	}
+	// Create the new user
+	s.db.Create(&user)
+	return nil
 }

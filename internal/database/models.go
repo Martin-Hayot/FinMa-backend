@@ -3,36 +3,44 @@ package database
 import (
 	"time"
 
-	"gorm.io/gorm"
+	"github.com/google/uuid"
 )
 
 type User struct {
-	gorm.Model
-	ID           uint           `json:"id" gorm:"primary_key"`
-	FirstName    string         `json:"first_name"`
-	LastName     string         `json:"last_name"`
-	Email        string         `json:"email" gorm:"uniqueIndex"`
-	Password     string         `json:"password"`
-	Role         string         `json:"role"`
-	Transactions []Transactions `json:"transactions"`
-	BankAccounts []BankAccount  `json:"bank_accounts"`
+	ID            uuid.UUID      `json:"id" gorm:"primary_key"`
+	FirstName     string         `json:"first_name" validate:"required"`
+	LastName      string         `json:"last_name" validate:"required"`
+	Email         string         `json:"email" gorm:"uniqueIndex" validate:"required,email"`
+	Password      string         `json:"password" validate:"required"`
+	Role          string         `json:"role"`
+	Transactions  []Transaction  `json:"transactions" gorm:"foreignKey:UserID"`
+	BankAccounts  []BankAccount  `json:"bank_accounts" gorm:"foreignKey:UserID"`
+	Budgets       []Budget       `json:"budgets" gorm:"foreignKey:UserID"`
+	Notifications []Notification `json:"notifications" gorm:"foreignKey:UserID"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	DeletedAt time.Time `json:"deleted_at"`
 }
 
 type BankAccount struct {
-	gorm.Model
-	ID            uint    `json:"id" gorm:"primary_key"`
-	BankName      string  `json:"bank_name"`
-	AccountType   string  `json:"account_type"`
-	AccountNumber string  `json:"account_number"`
-	Balance       float64 `json:"balance"`
+	ID            uuid.UUID `json:"id" gorm:"primary_key"`
+	BankName      string    `json:"bank_name"`
+	AccountType   string    `json:"account_type"`
+	AccountNumber string    `json:"account_number" gorm:"uniqueIndex"`
+	Balance       float64   `json:"balance"`
 
-	UserID       uint           `json:"user_id"`
-	User         User           `json:"user"`
-	Transactions []Transactions `json:"transactions"`
+	UserID       uuid.UUID     `json:"user_id"`
+	User         User          `json:"user"`
+	Transactions []Transaction `json:"transactions" gorm:"foreignKey:BankAccountID"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	DeletedAt time.Time `json:"deleted_at"`
 }
-type Transactions struct {
-	gorm.Model
-	ID          uint      `json:"id" gorm:"primary_key"`
+
+type Transaction struct {
+	ID          uuid.UUID `json:"id" gorm:"primary_key"`
 	Category    string    `json:"category"`
 	Amount      float64   `json:"amount"`
 	Date        time.Time `json:"date"`
@@ -40,31 +48,41 @@ type Transactions struct {
 	IsRecuring  bool      `json:"is_recuring"`
 	Description string    `json:"description"`
 
-	UserID        uint        `json:"user_id"`
+	UserID        uuid.UUID   `json:"user_id"`
 	User          User        `json:"user"`
-	BankAccountID uint        `json:"bank_account_id"`
+	BankAccountID uuid.UUID   `json:"bank_account_id"`
 	BankAccount   BankAccount `json:"bank_account"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	DeletedAt time.Time `json:"deleted_at"`
 }
 
 type Budget struct {
-	gorm.Model
-	ID        uint      `json:"id" gorm:"primary_key"`
+	ID        uuid.UUID `json:"id" gorm:"primary_key"`
 	Category  string    `json:"category"`
 	Amount    float64   `json:"amount"`
 	StartDate time.Time `json:"start_date"`
 	EndDate   time.Time `json:"end_date"`
 
-	UserID uint `json:"user_id"`
-	User   User `json:"user"`
+	UserID uuid.UUID `json:"user_id"`
+	User   User      `json:"user"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	DeletedAt time.Time `json:"deleted_at"`
 }
 
 type Notification struct {
-	gorm.Model
-	ID       uint   `json:"id" gorm:"primary_key"`
-	Type     string `json:"type"`
-	Message  string `json:"message"`
-	IsActive bool   `json:"is_active"`
+	ID       uuid.UUID `json:"id" gorm:"primary_key"`
+	Type     string    `json:"type"`
+	Message  string    `json:"message"`
+	IsActive bool      `json:"is_active"`
 
-	UserID uint `json:"user_id"`
-	User   User `json:"user"`
+	UserID uuid.UUID `json:"user_id"`
+	User   User      `json:"user"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	DeletedAt time.Time `json:"deleted_at"`
 }
