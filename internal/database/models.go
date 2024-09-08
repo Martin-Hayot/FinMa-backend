@@ -17,10 +17,23 @@ type User struct {
 	BankAccounts  []BankAccount  `json:"bank_accounts" gorm:"foreignKey:UserID"`
 	Budgets       []Budget       `json:"budgets" gorm:"foreignKey:UserID"`
 	Notifications []Notification `json:"notifications" gorm:"foreignKey:UserID"`
+	RefreshTokens []RefreshToken `json:"refresh_tokens" gorm:"foreignKey:UserID"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	DeletedAt time.Time `json:"deleted_at"`
+}
+
+type RefreshToken struct {
+	ID        uuid.UUID `json:"id" gorm:"primary_key"`
+	Token     string    `json:"token"`
+	ExpiresAt time.Time `json:"expires_at"`
+
+	UserID uuid.UUID `json:"user_id"`
+	User   User      `json:"user"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type BankAccount struct {

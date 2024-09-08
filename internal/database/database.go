@@ -33,6 +33,9 @@ type Service interface {
 
 	// CreateUser creates a new user in the database.
 	CreateUser(user User) error
+
+	// GetUserByEmail returns a user from the database based on the email.
+	GetUserByEmail(email string) User
 }
 
 type service struct {
@@ -49,6 +52,10 @@ var (
 	schema     = os.Getenv("DB_SCHEMA")
 	dbInstance *service
 )
+
+func Get() service {
+	return *dbInstance
+}
 
 func New() Service {
 	// Reuse Connection
@@ -174,4 +181,10 @@ func (s *service) CreateUser(user User) error {
 	// Create the new user
 	s.db.Create(&user)
 	return nil
+}
+
+func (s *service) GetUserByEmail(email string) User {
+	var user User
+	s.db.Where("email = ?", email).First(&user)
+	return user
 }

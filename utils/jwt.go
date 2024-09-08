@@ -5,9 +5,16 @@ import (
 	"os"
 	"time"
 
+	"github.com/charmbracelet/log"
+	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwt"
 )
+
+type Payload struct {
+	UserID uuid.UUID `json:"user_id"`
+	Email  string    `json:"email"`
+}
 
 var (
 	// AccessTokenSecret is the secret key used to sign the access token.
@@ -19,7 +26,7 @@ var (
 // GenerateAccessToken generates a new JWT access token.
 // The payload is the data that will be stored in the token.
 // The function returns the signed token as a string.
-func GenerateAccessToken[T any](payload T) (string, error) {
+func GenerateAccessToken(payload Payload) (string, error) {
 	if AccessTokenSecret == "" {
 		return "", fmt.Errorf("access token secret is not set")
 	}
@@ -44,7 +51,7 @@ func GenerateAccessToken[T any](payload T) (string, error) {
 	return string(signedToken), nil
 }
 
-func GenerateRefreshToken[T any](payload T) (string, error) {
+func GenerateRefreshToken(payload Payload) (string, error) {
 	if RefreshTokenSecret == "" {
 		return "", fmt.Errorf("refresh token secret is not set")
 	}
@@ -55,7 +62,7 @@ func GenerateRefreshToken[T any](payload T) (string, error) {
 	// Set the token claims
 	token.Set("payload", payload)
 	token.Set(jwt.IssuedAtKey, time.Now().Unix())
-	token.Set(jwt.ExpirationKey, time.Now().Add(time.Hour*24).Unix())
+	token.Set(jwt.ExpirationKey, time.Now().Add(time.Hour*24*7).Unix())
 	token.Set(jwt.IssuerKey, "FinMa")
 	token.Set(jwt.SubjectKey, "refresh")
 	token.Set(jwt.AudienceKey, "users")
@@ -71,54 +78,71 @@ func GenerateRefreshToken[T any](payload T) (string, error) {
 
 // VerifyAccessToken verifies the JWT access token.
 // The function returns the payload stored in the token.
-func VerifyAccessToken(tokenString string) (interface{}, error) {
+func VerifyAccessToken(tokenString string) (Payload, error) {
 	if AccessTokenSecret == "" {
-		return nil, fmt.Errorf("access token secret is not set")
+		return Payload{}, fmt.Errorf("access token secret is not set")
 	}
 
 	// Parse the token
 	token, err := jwt.Parse([]byte(tokenString), jwt.WithKey(jwa.HS256, []byte(AccessTokenSecret)), jwt.WithValidate(true))
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to verify token: %w", err)
+		return Payload{}, err
 	}
 
 	// Retrieve the payload from the token
-
 	payload, ok := token.Get("payload")
-
 	if !ok {
-		return nil, fmt.Errorf("failed to retrieve payload from token")
+		log.Warn("Failed to retrieve payload from access token")
+		return Payload{}, err
 	}
 
-	fmt.Println(payload)
+	// Convert payload to Payload struct
+	payloadMap := payload.(map[string]interface{})
+	userID, err := uuid.Parse(payloadMap["user_id"].(string))
+	if err != nil {
+		log.Warn("Failed to parse user_id: ", err)
+		return Payload{}, fmt.Errorf("failed to parse user_id: %w", err)
+	}
 
-	return payload, nil
+	return Payload{
+		UserID: userID,
+		Email:  payloadMap["email"].(string),
+	}, nil
 }
 
 // VerifyRefreshToken verifies the JWT refresh token.
 // The function returns the payload stored in the token.
-func VerifyRefreshToken(tokenString string) (interface{}, error) {
+func VerifyRefreshToken(tokenString string) (Payload, error) {
 	if RefreshTokenSecret == "" {
-		return "", fmt.Errorf("refresh token secret is not set")
+		return Payload{}, fmt.Errorf("refresh token secret is not set")
 	}
 
 	// Parse the token
 	token, err := jwt.Parse([]byte(tokenString), jwt.WithKey(jwa.HS256, []byte(RefreshTokenSecret)), jwt.WithValidate(true))
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to verify token: %w", err)
+		return Payload{}, err
 	}
 
 	// Retrieve the payload from the token
-
 	payload, ok := token.Get("payload")
-
 	if !ok {
-		return nil, fmt.Errorf("failed to retrieve payload from token")
+		log.Warn("Failed to retrieve payload from refresh token")
+		return Payload{}, fmt.Errorf("failed to retrieve payload from token")
 	}
 
-	fmt.Println(payload)
+	// Convert payload to Payload struct
+	payloadMap := payload.(map[string]interface{})
+	userID := payloadMap["user_id"]
+	email := payloadMap["email"]
+	userID, err = uuid.Parse(userID.(string))
+	if err != nil {
+		return Payload{}, fmt.Errorf("failed to parse user_id: %w", err)
+	}
 
-	return payload, nil
+	return Payload{
+		UserID: userID.(uuid.UUID),
+		Email:  email.(string),
+	}, nil
 }
