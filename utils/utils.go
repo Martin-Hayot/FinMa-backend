@@ -34,6 +34,16 @@ func ValidatePassword(password string) error {
 	return nil
 }
 
+// HasRole checks if a user has the required role.
+func HasRole(userRole string, allowedRoles []string) bool {
+	for _, role := range allowedRoles {
+		if userRole == role {
+			return true
+		}
+	}
+	return false
+}
+
 func containsUppercase(s string) bool {
 	for _, c := range s {
 		if c >= 'A' && c <= 'Z' {

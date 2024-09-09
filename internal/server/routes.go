@@ -2,6 +2,7 @@ package server
 
 import (
 	"FinMa/internal/handlers"
+	"FinMa/internal/middlewares"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -19,6 +20,9 @@ func (s *FiberServer) RegisterFiberRoutes() {
 	auth.Post("/login", handlers.LoginHandler)
 	auth.Post("/refresh", handlers.RefreshHandler)
 	api.Get("/", s.HelloWorldHandler)
+	api.Post("/transactions", middlewares.Authorize("user"), handlers.CreateTransaction)
+	api.Get("/transactions", middlewares.Authorize("user"), handlers.GetTransactions)
+	api.Get("/transactions/:id", middlewares.Authorize("user"), handlers.GetTransactionByID)
 	api.Get("/health", s.healthHandler)
 
 }

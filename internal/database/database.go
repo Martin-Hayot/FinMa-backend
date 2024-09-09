@@ -188,3 +188,33 @@ func (s *service) GetUserByEmail(email string) User {
 	s.db.Where("email = ?", email).First(&user)
 	return user
 }
+
+func (s *service) CreateTransaction(transaction *Transaction) error {
+	s.db.Create(transaction)
+	if s.db.Error != nil {
+		return s.db.Error
+	}
+	return nil
+}
+
+func (s *service) GetTransactions(user *User) []Transaction {
+	var transactions []Transaction
+	s.db.Where("user_id = ?", user.ID).Find(&transactions)
+
+	if s.db.Error != nil {
+		log.Println("Error fetching transactions: ", s.db.Error)
+		return nil
+	}
+	return transactions
+}
+
+func (s *service) GetTransactionByID(id string) Transaction {
+	var transaction Transaction
+	s.db.First(&transaction, id)
+
+	if s.db.Error != nil {
+		log.Println("Error fetching transaction: ", s.db.Error)
+		return Transaction{}
+	}
+	return transaction
+}

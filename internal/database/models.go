@@ -57,8 +57,8 @@ type Transaction struct {
 	Category    string    `json:"category"`
 	Amount      float64   `json:"amount"`
 	Date        time.Time `json:"date"`
-	Type        string    `json:"type"`
-	IsRecuring  bool      `json:"is_recuring"`
+	Type        string    `json:"type"` // E.g., "expense", "income"
+	IsRecurring bool      `json:"is_recurring"`
 	Description string    `json:"description"`
 
 	UserID        uuid.UUID   `json:"user_id"`

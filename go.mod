@@ -24,7 +24,9 @@ require (
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.15.2 // indirect
+	github.com/philhofer/fwd v1.1.2 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
+	github.com/tinylib/msgp v1.1.8 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 )
 

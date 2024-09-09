@@ -36,6 +36,7 @@ func SignUpHandler(c *fiber.Ctx) error {
 	user.ID = uuid.New()
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
+	user.Role = "user"
 
 	if err := utils.ValidatePassword(user.Password); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
