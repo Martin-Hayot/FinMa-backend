@@ -1,7 +1,7 @@
-package handlers
+package server
 
 import (
-	"FinMa/internal/database"
+	"FinMa/types"
 	"FinMa/utils"
 	"fmt"
 	"time"
@@ -20,8 +20,8 @@ var validate = validator.New()
 // - password: the user's password
 // - first_name: the user's first name
 // - last_name: the user's last name
-func SignUpHandler(c *fiber.Ctx) error {
-	var user database.User
+func (s *FiberServer) SignUpHandler(c *fiber.Ctx) error {
+	var user types.User
 
 	if err := c.BodyParser(&user); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -48,8 +48,8 @@ func SignUpHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot hash password"})
 	}
 	user.Password = hashedPassword
-	db := database.Get()
-	if err := db.CreateUser(user); err != nil {
+
+	if err := s.db.CreateUser(user); err != nil {
 		log.Error(err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -57,7 +57,7 @@ func SignUpHandler(c *fiber.Ctx) error {
 	return c.JSON(user)
 }
 
-func LoginHandler(c *fiber.Ctx) error {
+func (s *FiberServer) LoginHandler(c *fiber.Ctx) error {
 	var loginRequest struct {
 		Email    string `json:"email" validate:"required,email"`
 		Password string `json:"password" validate:"required"`
@@ -74,8 +74,8 @@ func LoginHandler(c *fiber.Ctx) error {
 		log.Error(fmt.Sprintf("error validating login request: %s", err))
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid email or password format"})
 	}
-	db := database.Get()
-	user := db.GetUserByEmail(loginRequest.Email)
+
+	user := s.db.GetUserByEmail(loginRequest.Email)
 
 	if user.ID == uuid.Nil {
 		// Log the error
@@ -129,7 +129,7 @@ func LoginHandler(c *fiber.Ctx) error {
 	})
 }
 
-func RefreshHandler(c *fiber.Ctx) error {
+func (s *FiberServer) RefreshHandler(c *fiber.Ctx) error {
 	var req struct {
 		RefreshToken string `json:"refresh_token" validate:"required"`
 	}
@@ -153,8 +153,7 @@ func RefreshHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	db := database.Get()
-	existingUser := db.GetUserByEmail(payload.Email)
+	existingUser := s.db.GetUserByEmail(payload.Email)
 
 	if existingUser.ID == uuid.Nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{

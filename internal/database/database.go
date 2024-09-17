@@ -1,14 +1,16 @@
 package database
 
 import (
+	"FinMa/types"
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/charmbracelet/log"
+	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/joho/godotenv/autoload"
 	"gorm.io/driver/postgres"
@@ -25,17 +27,17 @@ type Service interface {
 	// It returns an error if the connection cannot be closed.
 	Close() error
 
-	// GetUsers returns a list of users from the database.
-	GetUsers() []User
+	// User related methods
+	GetUsers() []types.User
+	GetUser(id int) types.User
+	CreateUser(user types.User) error
+	GetUserByEmail(email string) types.User
+	GetUserByID(id uuid.UUID) types.User
 
-	// GetUser returns a user from the database.
-	GetUser(id int) User
-
-	// CreateUser creates a new user in the database.
-	CreateUser(user User) error
-
-	// GetUserByEmail returns a user from the database based on the email.
-	GetUserByEmail(email string) User
+	// Transaction related methods
+	CreateTransaction(transaction *types.Transaction) error
+	GetTransactions(user *types.User) []types.Transaction
+	GetTransactionByID(id string) types.Transaction
 }
 
 type service struct {
@@ -54,6 +56,10 @@ var (
 )
 
 func Get() service {
+	if dbInstance == nil {
+		log.Error("Database not initialized")
+	}
+
 	return *dbInstance
 }
 
@@ -77,7 +83,7 @@ func New() Service {
 		log.Fatal("Error connecting with gorm: ", err)
 	}
 
-	err = gormDB.AutoMigrate(&User{}, &BankAccount{}, &Transaction{}, &Budget{}, &Notification{})
+	err = gormDB.AutoMigrate(&types.User{}, &types.BankAccount{}, &types.Transaction{}, &types.Budget{}, &types.Notification{})
 	if err != nil {
 		log.Fatal("Error with migration: ", err)
 	}
@@ -150,71 +156,11 @@ func (s *service) Close() error {
 }
 
 func (s *service) Migrate() error {
-	err := s.db.AutoMigrate(&User{}, &BankAccount{}, &Transaction{}, &Budget{}, &Notification{})
+	err := s.db.AutoMigrate(&types.User{}, &types.BankAccount{}, &types.Transaction{}, &types.Budget{}, &types.Notification{})
 
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (s *service) GetUsers() []User {
-	var users []User
-	s.db.Find(&users)
-	return users
-}
-
-func (s *service) GetUser(id int) User {
-	var user User
-	s.db.First(&user, id)
-	return user
-}
-
-func (s *service) CreateUser(user User) error {
-	// Check if user already exists
-	var existingUser User
-	result := s.db.Where("email = ?", user.Email).First(&existingUser)
-	if result.RowsAffected > 0 {
-		return fmt.Errorf("user with email %s already exists", user.Email)
-	}
-	// Create the new user
-	s.db.Create(&user)
-	return nil
-}
-
-func (s *service) GetUserByEmail(email string) User {
-	var user User
-	s.db.Where("email = ?", email).First(&user)
-	return user
-}
-
-func (s *service) CreateTransaction(transaction *Transaction) error {
-	s.db.Create(transaction)
-	if s.db.Error != nil {
-		return s.db.Error
-	}
-	return nil
-}
-
-func (s *service) GetTransactions(user *User) []Transaction {
-	var transactions []Transaction
-	s.db.Where("user_id = ?", user.ID).Find(&transactions)
-
-	if s.db.Error != nil {
-		log.Println("Error fetching transactions: ", s.db.Error)
-		return nil
-	}
-	return transactions
-}
-
-func (s *service) GetTransactionByID(id string) Transaction {
-	var transaction Transaction
-	s.db.First(&transaction, id)
-
-	if s.db.Error != nil {
-		log.Println("Error fetching transaction: ", s.db.Error)
-		return Transaction{}
-	}
-	return transaction
 }

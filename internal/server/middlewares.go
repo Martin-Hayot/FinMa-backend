@@ -1,7 +1,6 @@
-package middlewares
+package server
 
 import (
-	"FinMa/internal/database"
 	"FinMa/utils"
 	"strings"
 
@@ -13,7 +12,7 @@ import (
 
 // Authorize is a middleware that checks if the user is authenticated and has the correct role.
 // If the user is not authenticated or doesn't have the correct role, it returns a 401 Unauthorized error.
-func Authorize(allowedRoles ...string) fiber.Handler {
+func (s *FiberServer) Authorize(allowedRoles ...string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
@@ -47,9 +46,7 @@ func Authorize(allowedRoles ...string) fiber.Handler {
 			})
 		}
 
-		// Check if the user exists
-		db := database.Get()
-		existingUser := db.GetUserByEmail(payload.Email)
+		existingUser := s.db.GetUserByEmail(payload.Email)
 
 		if existingUser.ID == uuid.Nil {
 			log.Warn("User not found")
