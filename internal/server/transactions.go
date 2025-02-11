@@ -76,7 +76,7 @@ func (s *FiberServer) CreateTransaction(c *fiber.Ctx) error {
 		})
 	}
 
-	transaction := &types.Transaction{
+	transaction := types.Transaction{
 		Category:      body.Category,
 		Amount:        body.Amount,
 		Date:          parsedDate,
@@ -97,7 +97,7 @@ func (s *FiberServer) CreateTransaction(c *fiber.Ctx) error {
 }
 
 func (s *FiberServer) GetTransactions(c *fiber.Ctx) error {
-	user := c.Locals("user").(*types.User)
+	user := c.Locals("user").(types.User)
 	transactions := s.db.GetTransactions(user)
 
 	return c.JSON(transactions)

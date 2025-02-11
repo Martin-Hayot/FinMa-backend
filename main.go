@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/charmbracelet/log"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
@@ -19,7 +20,7 @@ type Payload struct {
 }
 
 func main() {
-
+	log.SetLevel(log.DebugLevel)
 	server := server.New()
 
 	server.RegisterFiberRoutes()

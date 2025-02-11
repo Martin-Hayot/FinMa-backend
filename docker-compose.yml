@@ -1,6 +1,6 @@
 services:
     psql:
-        image: postgres:latest
+        image: postgres:16
         env_file:
             - .env
         environment:

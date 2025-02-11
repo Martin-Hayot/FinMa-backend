@@ -35,8 +35,8 @@ type Service interface {
 	GetUserByID(id uuid.UUID) types.User
 
 	// Transaction related methods
-	CreateTransaction(transaction *types.Transaction) error
-	GetTransactions(user *types.User) []types.Transaction
+	CreateTransaction(transaction types.Transaction) error
+	GetTransactions(user types.User) []types.Transaction
 	GetTransactionByID(id string) types.Transaction
 }
 

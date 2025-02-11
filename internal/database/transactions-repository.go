@@ -6,7 +6,7 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-func (s *service) CreateTransaction(transaction *types.Transaction) error {
+func (s *service) CreateTransaction(transaction types.Transaction) error {
 	s.db.Create(transaction)
 	if s.db.Error != nil {
 		return s.db.Error
@@ -14,7 +14,7 @@ func (s *service) CreateTransaction(transaction *types.Transaction) error {
 	return nil
 }
 
-func (s *service) GetTransactions(user *types.User) []types.Transaction {
+func (s *service) GetTransactions(user types.User) []types.Transaction {
 	var transactions []types.Transaction
 	s.db.Where("user_id = ?", user.ID).Find(&transactions)
 
