@@ -8,8 +8,8 @@ import (
 
 type User struct {
 	ID            uuid.UUID      `json:"id" gorm:"primary_key"`
-	FirstName     string         `json:"first_name" validate:"required"`
-	LastName      string         `json:"last_name" validate:"required"`
+	FirstName     string         `json:"firstName" validate:"required"`
+	LastName      string         `json:"lastName" validate:"required"`
 	Email         string         `json:"email" gorm:"uniqueIndex" validate:"required,email"`
 	Password      string         `json:"password" validate:"required"`
 	Role          string         `json:"role"`

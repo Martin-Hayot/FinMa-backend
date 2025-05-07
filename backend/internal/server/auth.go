@@ -18,8 +18,8 @@ var validate = validator.New()
 // It expects a JSON object with the following fields:
 // - email: the user's email address
 // - password: the user's password
-// - first_name: the user's first name
-// - last_name: the user's last name
+// - firstName: the user's first name
+// - lastName: the user's last name
 func (s *FiberServer) SignUpHandler(c *fiber.Ctx) error {
 	var user types.User
 
