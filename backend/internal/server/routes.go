@@ -26,8 +26,10 @@ func (s *FiberServer) RegisterFiberRoutes() {
 	api.Get("/health", s.healthHandler)
 
 	// Auth routes
+	auth.Get("/me", s.Authorize("user"), s.MeHandler)
 	auth.Post("/signup", s.SignUpHandler)
 	auth.Post("/login", s.LoginHandler)
+	auth.Post("/logout", s.LogoutHandler)
 	auth.Post("/refresh", s.RefreshHandler)
 
 	// Bank account routes

@@ -172,3 +172,33 @@ func (s *FiberServer) RefreshHandler(c *fiber.Ctx) error {
 		"access_token": accessToken,
 	})
 }
+
+func (s *FiberServer) LogoutHandler(c *fiber.Ctx) error {
+	// Clear the access token cookie
+	c.ClearCookie("access_token")
+	c.ClearCookie("refresh_token")
+	return c.JSON(fiber.Map{
+		"message": "Logged out successfully",
+	})
+}
+
+func (s *FiberServer) MeHandler(c *fiber.Ctx) error {
+	user, ok := c.Locals("user").(*types.User)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid user context",
+		})
+	}
+	return c.JSON(fiber.Map{
+		"message": "You are logged in",
+		"user": fiber.Map{
+			"id":        user.ID,
+			"email":     user.Email,
+			"role":      user.Role,
+			"firstName": user.FirstName,
+			"lastName":  user.LastName,
+			"createdAt": user.CreatedAt,
+			"updatedAt": user.UpdatedAt,
+		},
+	})
+}

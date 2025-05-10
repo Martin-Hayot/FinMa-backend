@@ -15,23 +15,28 @@ import (
 func (s *FiberServer) Authorize(allowedRoles ...string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		authHeader := c.Get("Authorization")
-		if authHeader == "" {
-			log.Warn("Authorization header is missing")
+		cookieToken := c.Cookies("access_token")
+
+		// Check both header and cookie
+		var token string
+		if authHeader != "" {
+			auth := strings.Fields(authHeader)
+			if len(auth) != 2 || auth[0] != "Bearer" {
+				log.Warn("Invalid Authorization header")
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+					"error": "Unauthorized",
+				})
+			}
+			token = auth[1]
+		} else if cookieToken != "" {
+			token = cookieToken
+		} else {
+			log.Warn("Missing authorization credentials")
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Unauthorized",
 			})
 		}
 
-		auth := strings.Fields(authHeader)
-		if len(auth) != 2 || auth[0] != "Bearer" {
-			log.Warn("Invalid Authorization header")
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Unauthorized",
-			})
-		}
-
-		// Check if the token is valid
-		token := auth[1]
 		payload, err := utils.VerifyAccessToken(token)
 		if err != nil {
 			if err.Error() == jwt.ErrTokenExpired().Error() {
@@ -64,7 +69,7 @@ func (s *FiberServer) Authorize(allowedRoles ...string) fiber.Handler {
 		}
 
 		// Store the user in the context
-		c.Locals("user", existingUser)
+		c.Locals("user", &existingUser)
 
 		// Continue to the next middleware
 		return c.Next()

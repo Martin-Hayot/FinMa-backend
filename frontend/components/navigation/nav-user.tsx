@@ -2,7 +2,6 @@
 
 import {
     BellIcon,
-    CreditCardIcon,
     LogOutIcon,
     MoreVerticalIcon,
     UserCircleIcon,
@@ -24,6 +23,7 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from "@/components/ui/sidebar";
+import { logout } from "@/actions/logout";
 
 export function NavUser({
     user,
@@ -51,7 +51,7 @@ export function NavUser({
                                     alt={user.name}
                                 />
                                 <AvatarFallback className="rounded-lg">
-                                    CN
+                                    {user.name[0].toUpperCase()}
                                 </AvatarFallback>
                             </Avatar>
                             <div className="grid flex-1 text-left text-sm leading-tight">
@@ -79,7 +79,7 @@ export function NavUser({
                                         alt={user.name}
                                     />
                                     <AvatarFallback className="rounded-lg">
-                                        CN
+                                        {user.name[0].toUpperCase()}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
@@ -99,16 +99,12 @@ export function NavUser({
                                 Account
                             </DropdownMenuItem>
                             <DropdownMenuItem>
-                                <CreditCardIcon />
-                                Billing
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
                                 <BellIcon />
                                 Notifications
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => logout()}>
                             <LogOutIcon />
                             Log out
                         </DropdownMenuItem>

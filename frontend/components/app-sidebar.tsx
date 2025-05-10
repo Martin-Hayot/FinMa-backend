@@ -2,23 +2,16 @@
 
 import * as React from "react";
 import {
-    IconCamera,
-    IconChartBar,
     IconDashboard,
     IconDatabase,
-    IconFileAi,
-    IconFileDescription,
     IconFileWord,
-    IconFolder,
-    IconHelp,
-    IconListDetails,
     IconReport,
     IconSearch,
     IconSettings,
-    IconUsers,
+    // IconUsers,
 } from "@tabler/icons-react";
 
-import { NavDocuments } from "@/components/navigation/nav-documents";
+// import { NavDocuments } from "@/components/navigation/nav-documents";
 import { NavMain } from "@/components/navigation/nav-main";
 import { NavSecondary } from "@/components/navigation/nav-secondary";
 import { NavUser } from "@/components/navigation/nav-user";
@@ -33,98 +26,21 @@ import {
 } from "@/components/ui/sidebar";
 import { GalleryVerticalEnd, LucideIcon } from "lucide-react";
 import Link from "next/link";
+import { useUserStore } from "@/store/useUser";
 
-const data = {
-    user: {
-        name: "shadcn",
-        email: "m@example.com",
-        avatar: "/avatars/shadcn.jpg",
-    },
+const navigation = {
     navMain: [
         {
             title: "Dashboard",
-            url: "#",
+            url: "/dashboard",
             icon: IconDashboard,
-        },
-        {
-            title: "Lifecycle",
-            url: "#",
-            icon: IconListDetails,
-        },
-        {
-            title: "Analytics",
-            url: "#",
-            icon: IconChartBar,
-        },
-        {
-            title: "Projects",
-            url: "#",
-            icon: IconFolder,
-        },
-        {
-            title: "Team",
-            url: "#",
-            icon: IconUsers,
-        },
-    ],
-    navClouds: [
-        {
-            title: "Capture",
-            icon: IconCamera,
-            isActive: true,
-            url: "#",
-            items: [
-                {
-                    title: "Active Proposals",
-                    url: "#",
-                },
-                {
-                    title: "Archived",
-                    url: "#",
-                },
-            ],
-        },
-        {
-            title: "Proposal",
-            icon: IconFileDescription,
-            url: "#",
-            items: [
-                {
-                    title: "Active Proposals",
-                    url: "#",
-                },
-                {
-                    title: "Archived",
-                    url: "#",
-                },
-            ],
-        },
-        {
-            title: "Prompts",
-            icon: IconFileAi,
-            url: "#",
-            items: [
-                {
-                    title: "Active Proposals",
-                    url: "#",
-                },
-                {
-                    title: "Archived",
-                    url: "#",
-                },
-            ],
         },
     ],
     navSecondary: [
         {
             title: "Settings",
-            url: "#",
+            url: "/settings",
             icon: IconSettings,
-        },
-        {
-            title: "Get Help",
-            url: "#",
-            icon: IconHelp,
         },
         {
             title: "Search",
@@ -152,6 +68,7 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+    const { user } = useUserStore();
     return (
         <Sidebar collapsible="offcanvas" {...props}>
             <SidebarHeader>
@@ -176,14 +93,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarContent>
                 <NavMain
                     items={
-                        data.navMain as unknown as {
+                        navigation.navMain as unknown as {
                             title: string;
                             url: string;
                             icon?: LucideIcon | undefined;
                         }[]
                     }
                 />
-                <NavDocuments
+                {/* <NavDocuments
                     items={
                         data.documents as unknown as {
                             name: string;
@@ -191,10 +108,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             icon: LucideIcon;
                         }[]
                     }
-                />
+                /> */}
                 <NavSecondary
                     items={
-                        data.navSecondary as unknown as {
+                        navigation.navSecondary as unknown as {
                             title: string;
                             url: string;
                             icon: LucideIcon;
@@ -204,7 +121,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 />
             </SidebarContent>
             <SidebarFooter>
-                <NavUser user={data.user} />
+                <NavUser
+                    user={{
+                        name: user?.firstName + " " + user?.lastName,
+                        email: user?.email || "",
+                        avatar: user?.avatar || "",
+                    }}
+                />
             </SidebarFooter>
         </Sidebar>
     );
