@@ -64,13 +64,11 @@ func (s *FiberServer) LoginHandler(c *fiber.Ctx) error {
 	}
 
 	if err := c.BodyParser(&loginRequest); err != nil {
-		// Log the error
 		log.Error(fmt.Sprintf("error parsing login request: %s", err))
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
 	}
 
 	if err := validate.Struct(loginRequest); err != nil {
-		// Log the error
 		log.Error(fmt.Sprintf("error validating login request: %s", err))
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid email or password format"})
 	}
@@ -78,13 +76,11 @@ func (s *FiberServer) LoginHandler(c *fiber.Ctx) error {
 	user := s.db.GetUserByEmail(loginRequest.Email)
 
 	if user.ID == uuid.Nil {
-		// Log the error
 		log.Info(fmt.Sprintf("user not found: %s", loginRequest.Email))
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "User not found"})
 	}
 
 	if err := utils.ComparePasswords(user.Password, loginRequest.Password); err != nil {
-		// Log the error
 		log.Warn(fmt.Sprintf("invalid password for user: %s", loginRequest.Email))
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid password"})
 	}
