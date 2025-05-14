@@ -54,7 +54,7 @@ func (s *FiberServer) SignUpHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.JSON(user)
+	return c.Status(fiber.StatusOK).JSON(user)
 }
 
 func (s *FiberServer) LoginHandler(c *fiber.Ctx) error {
