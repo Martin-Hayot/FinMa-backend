@@ -54,7 +54,7 @@ func (s *FiberServer) SignUpHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.JSON(user)
+	return c.Status(fiber.StatusOK).JSON(user)
 }
 
 func (s *FiberServer) LoginHandler(c *fiber.Ctx) error {
@@ -185,6 +185,29 @@ func (s *FiberServer) MeHandler(c *fiber.Ctx) error {
 			"error": "Invalid user context",
 		})
 	}
+	return c.JSON(fiber.Map{
+		"message": "You are logged in",
+		"user": fiber.Map{
+			"id":        user.ID,
+			"email":     user.Email,
+			"role":      user.Role,
+			"firstName": user.FirstName,
+			"lastName":  user.LastName,
+			"createdAt": user.CreatedAt,
+			"updatedAt": user.UpdatedAt,
+		},
+	})
+}
+
+func (s *FiberServer) VerifyHandler(c *fiber.Ctx) error {
+	user, ok := c.Locals("user").(*types.User)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid user context",
+		})
+	}
+
+	log.Debug(fmt.Sprintf("User %s is verified", user.Email))
 	return c.JSON(fiber.Map{
 		"message": "You are logged in",
 		"user": fiber.Map{
