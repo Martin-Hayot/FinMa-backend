@@ -2,20 +2,10 @@ package server
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 func (s *FiberServer) RegisterFiberRoutes() {
-	s.Use(cors.New(cors.Config{
-		AllowOrigins:     "http://localhost:3000",
-		AllowMethods:     "POST, GET, OPTIONS, PUT, DELETE",
-		AllowHeaders:     "Content-Type, Authorization, Accept, Origin",
-		ExposeHeaders:    "Set-Cookie",
-		AllowCredentials: true,
-	}))
-
 	// [Groups]
-	// Frontend routes
 	api := s.Group("/api")
 	auth := api.Group("/auth")
 
@@ -25,8 +15,12 @@ func (s *FiberServer) RegisterFiberRoutes() {
 	api.Get("/routes", s.ShowAllRoutes)
 	api.Get("/health", s.healthHandler)
 
-	// Auth routes
+	// [Plaid Routes]
+	api.Post("/link/token/create", s.CreateLinkTokenHandler)
+
+	// [Auth Routes]
 	auth.Get("/me", s.Authorize("user"), s.MeHandler)
+	auth.Post("/verify", s.Authorize("user"), s.VerifyHandler)
 	auth.Post("/signup", s.SignUpHandler)
 	auth.Post("/login", s.LoginHandler)
 	auth.Post("/logout", s.LogoutHandler)
@@ -39,6 +33,10 @@ func (s *FiberServer) RegisterFiberRoutes() {
 	api.Post("/transactions", s.Authorize("user"), s.CreateTransaction)
 	api.Get("/transactions", s.Authorize("user"), s.GetTransactions)
 	api.Get("/transactions/:id", s.Authorize("user"), s.GetTransactionByID)
+}
+
+func (s *FiberServer) CreateLinkTokenHandler(c *fiber.Ctx) error {
+	return nil
 }
 
 func (s *FiberServer) ShowAllRoutes(c *fiber.Ctx) error {
