@@ -24,6 +24,8 @@ require (
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/philhofer/fwd v1.1.2 // indirect
+	github.com/resend/resend-go/v2 v2.19.0 // indirect
+	github.com/resendlabs/resend-go v1.7.0 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
 	github.com/tinylib/msgp v1.1.8 // indirect

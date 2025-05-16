@@ -33,6 +33,14 @@ type Service interface {
 	CreateUser(user types.User) error
 	GetUserByEmail(email string) types.User
 	GetUserByID(id uuid.UUID) types.User
+	UpdateUser(user types.User) error
+
+	// Email verification token methods
+    CreateEmailVerificationToken(token types.EmailVerificationToken) error 
+    GetEmailVerificationToken(token string) types.EmailVerificationToken   
+    DeleteEmailVerificationToken(id uuid.UUID) error
+	DeleteEmailVerificationTokenByUserID(userID uuid.UUID) error
+      
 
 	// Transaction related methods
 	CreateTransaction(transaction types.Transaction) error
@@ -83,7 +91,7 @@ func New() Service {
 		log.Fatal("Error connecting with gorm: ", err)
 	}
 
-	err = gormDB.AutoMigrate(&types.User{}, &types.BankAccount{}, &types.Transaction{}, &types.Budget{}, &types.Notification{})
+	err = gormDB.AutoMigrate(&types.User{},&types.EmailVerificationToken{}, &types.BankAccount{}, &types.Transaction{}, &types.Budget{}, &types.Notification{})
 	if err != nil {
 		log.Fatal("Error with migration: ", err)
 	}
@@ -153,14 +161,4 @@ func (s *service) Health() map[string]string {
 func (s *service) Close() error {
 	log.Printf("Disconnected from database: %s", database)
 	return s.baseDB.Close()
-}
-
-func (s *service) Migrate() error {
-	err := s.db.AutoMigrate(&types.User{}, &types.BankAccount{}, &types.Transaction{}, &types.Budget{}, &types.Notification{})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

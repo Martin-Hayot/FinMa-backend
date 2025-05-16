@@ -31,6 +31,7 @@ func (s *FiberServer) RegisterFiberRoutes() {
 	auth.Post("/login", s.LoginHandler)
 	auth.Post("/logout", s.LogoutHandler)
 	auth.Post("/refresh", s.RefreshHandler)
+	auth.Post("/resend-verification", s.ResendVerificationHandler)
 
 	// Bank account routes
 	api.Post("/bank-accounts", s.Authorize("user"), s.CreateBankAccount)

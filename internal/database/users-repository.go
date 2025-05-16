@@ -42,3 +42,29 @@ func (s *service) GetUserByID(id uuid.UUID) types.User {
 	s.db.Where("id = ?", id).First(&user)
 	return user
 }
+
+// CreateEmailVerificationToken creates a new email verification token in the database.
+func (s *service) CreateEmailVerificationToken(token types.EmailVerificationToken) error {
+    return s.db.Create(&token).Error
+}
+
+// GetEmailVerificationToken retrieves an email verification token by its value.
+func (s *service) GetEmailVerificationToken(token string) types.EmailVerificationToken {
+    var verificationToken types.EmailVerificationToken
+    s.db.Where("token = ?", token).First(&verificationToken)
+    return verificationToken
+}
+
+// DeleteEmailVerificationToken deletes an email verification token by its ID.
+func (s *service) DeleteEmailVerificationToken(id uuid.UUID) error {
+    return s.db.Delete(&types.EmailVerificationToken{}, id).Error
+}
+
+// UpdateUser updates the user record in the database.
+func (s *service) UpdateUser(user types.User) error {
+    return s.db.Save(&user).Error
+}
+// DeleteEmailVerificationTokenByUserID supprime tous les tokens de vérification associés à un utilisateur.
+func (s *service) DeleteEmailVerificationTokenByUserID(userID uuid.UUID) error {
+    return s.db.Where("user_id = ?", userID).Delete(&types.EmailVerificationToken{}).Error
+}
