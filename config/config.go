@@ -8,42 +8,51 @@ import (
 	plaid "github.com/plaid/plaid-go/v31/plaid"
 )
 
-// Config holds all configuration for the application
+type DatabaseConfig struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	Name     string
+	Schema   string
+	SSLMode  string
+}
+
 type Config struct {
-	PlaidClientID     string
-	PlaidSecret       string
-	PlaidEnv          plaid.Environment
-	PlaidProducts     []string
-	PlaidCountryCodes []string
-	PlaidRedirectURI  string
-	Port              string
-	DatabaseHost      string
-	DatabasePort      string
-	DatabaseUser      string
-	DatabasePassword  string
-	DatabaseName      string
-	DatabaseSchema    string
+	PlaidClientID      string
+	PlaidSecret        string
+	PlaidEnv           plaid.Environment
+	PlaidProducts      []string
+	PlaidCountryCodes  []string
+	PlaidRedirectURI   string
+	Port               string
+	AccessTokenSecret  string
+	RefreshTokenSecret string
+	Database           DatabaseConfig
 }
 
 // LoadConfig loads configuration from environment variables
 func LoadConfig() *Config {
 	config := &Config{
-		PlaidClientID:     getEnv("PLAID_CLIENT_ID", ""),
-		PlaidSecret:       getEnv("PLAID_SECRET", ""),
-		PlaidProducts:     strings.Split(getEnv("PLAID_PRODUCTS", "transactions"), ","),
-		PlaidCountryCodes: strings.Split(getEnv("PLAID_COUNTRY_CODES", "US"), ","),
-		PlaidRedirectURI:  getEnv("PLAID_REDIRECT_URI", ""),
-		Port:              getEnv("PORT", "8080"),
-		DatabaseHost:      getEnv("DB_HOST", "localhost"),
-		DatabasePort:      getEnv("DB_PORT", "5432"),
-		DatabaseUser:      getEnv("DB_USERNAME", "postgres"),
-		DatabasePassword:  getEnv("DB_PASSWORD", "postgres"),
-		DatabaseName:      getEnv("DB_DATABASE", "finma"),
-		DatabaseSchema:    getEnv("DB_SCHEMA", "public"),
+		AccessTokenSecret:  getEnv("ACCESS_TOKEN_SECRET", "default_secret"),
+		RefreshTokenSecret: getEnv("REFRESH_TOKEN_SECRET", "default_secret"),
+		Port:               getEnv("PORT", "8080"),
+		PlaidClientID:      getEnv("PLAID_CLIENT_ID", ""),
+		PlaidSecret:        getEnv("PLAID_SECRET", ""),
+		PlaidProducts:      strings.Split(getEnv("PLAID_PRODUCTS", "transactions"), ","),
+		PlaidCountryCodes:  strings.Split(getEnv("PLAID_COUNTRY_CODES", "US"), ","),
+		Database: DatabaseConfig{
+			Host:     getEnv("DB_HOST", "localhost"),
+			Port:     getEnv("DB_PORT", "5432"),
+			User:     getEnv("DB_USERNAME", "postgres"),
+			Password: getEnv("DB_PASSWORD", "postgres"),
+			Name:     getEnv("DB_DATABASE", "finma"),
+			Schema:   getEnv("DB_SCHEMA", "public"),
+			SSLMode:  getEnv("DB_SSLMODE", "disable"),
+		},
 	}
-
-	// Validate required configuration
-	if config.PlaidClientID == "" || config.PlaidSecret == "" || config.DatabaseUser == "" || config.DatabasePassword == "" {
+	// Set default values
+	if config.PlaidClientID == "" || config.PlaidSecret == "" || config.Database.User == "" || config.Database.Password == "" {
 		log.Fatal("Error: PLAID_SECRET, PLAID_CLIENT_ID, DB_USERNAME or DB_PASSWORD is not set. Did you copy .env.example to .env and fill it out?")
 	}
 
