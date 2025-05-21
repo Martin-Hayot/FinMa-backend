@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"FinMa/dto"
+	"FinMa/internal/domain"
 	"FinMa/internal/repository"
 	"FinMa/utils"
 
@@ -18,7 +19,7 @@ import (
 type UserService interface {
 	// Profile management
 	GetUserByID(ctx context.Context, id uuid.UUID) (dto.UserResponse, error)
-	// UpdateProfile(ctx context.Context, id uuid.UUID, req dto.UpdateProfileRequest) (dto.UserResponse, error)
+	UpdateProfile(ctx context.Context, user domain.User, req dto.UpdateProfileRequest) (dto.UserResponse, error)
 	// ChangePassword(ctx context.Context, id uuid.UUID, req dto.ChangePasswordRequest) error
 	DeleteAccount(ctx context.Context, id uuid.UUID, password string) error
 
@@ -38,18 +39,7 @@ type userService struct {
 }
 
 // UpdateProfile updates a user's profile information
-func (s *userService) UpdateProfile(ctx context.Context, id uuid.UUID, req dto.UpdateProfileRequest) (dto.UserResponse, error) {
-	// Validate the request
-	if err := s.validator.Validate(req); err != nil {
-		return dto.UserResponse{}, err
-	}
-
-	// Get the current user
-	user, err := s.userRepo.GetByID(ctx, id)
-	if err != nil {
-		return dto.UserResponse{}, err
-	}
-
+func (s *userService) UpdateProfile(ctx context.Context, user domain.User, req dto.UpdateProfileRequest) (dto.UserResponse, error) {
 	// Update user fields
 	if req.FirstName != "" {
 		user.FirstName = req.FirstName
@@ -75,7 +65,7 @@ func (s *userService) UpdateProfile(ctx context.Context, id uuid.UUID, req dto.U
 
 	// Update user in database
 	if err := s.userRepo.Update(ctx, &user); err != nil {
-		log.Error("Failed to update user", "id", id, "error", err)
+		log.Error("Failed to update user", "id", user.ID, "error", err)
 		return dto.UserResponse{}, err
 	}
 
