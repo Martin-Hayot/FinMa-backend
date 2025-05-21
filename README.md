@@ -1,14 +1,56 @@
-# Project FinMa
+# About
 
-One Paragraph of project description goes here
+**FinMa** is a personal finance manager built with Go. Track expenses, manage budgets, and gain insights into your financial health with a simple, secure, and efficient backend.
 
-## Getting Started
+---
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+## 🚀 Getting Started
+
+Follow these steps to run **FinMa** locally on your machine.
+
+### ✅ Prerequisites
+
+Make sure you have the following installed:
+
+* [Go](https://go.dev/doc/install) (v1.20+ recommended)
+* [Docker](https://www.docker.com/products/docker-desktop/)
+* [Docker Compose](https://docs.docker.com/compose/install/)
+
+### 🛠️ Installation
+
+1. **Clone the repository**
+
+```bash
+git clone https://github.com/Martin-Hayot/FinMa-backend.git
+cd FinMa-backend
+```
+
+2. **Copy the content of the .env.example into .env**
+
+2. **Start the database using Docker Compose**
+
+```bash
+docker-compose up -d
+```
+
+This will start the database and any required services.
+
+3. **Run the Go application**
+
+```bash
+go run main.go
+```
+
+4. **Access the API**
+
+The server will run at `http://localhost:PORT` (port configured in `.env` file).
+
+---
+
 
 ## MakeFile
 
-run all make commands with clean tests
+run all make commands 
 ```bash
 make all build
 ```
