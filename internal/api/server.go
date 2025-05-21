@@ -39,7 +39,7 @@ func NewServer(config *config.Config, db *postgres.DB) *Server {
 	app.Use(recover.New())
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     "http://localhost:3000, http://localhost:8080",
-		AllowMethods:     "POST, GET, OPTIONS, PUT, DELETE",
+		AllowMethods:     "POST, GET, PATCH, OPTIONS, PUT, DELETE",
 		AllowHeaders:     "Content-Type, Authorization, Accept, Origin, Access-Control-Allow-Origin",
 		ExposeHeaders:    "Set-Cookie",
 		AllowCredentials: true,

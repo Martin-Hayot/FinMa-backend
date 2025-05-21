@@ -24,6 +24,10 @@ func SetupRoutes(app *fiber.App, services *service.Services, handlers *handlers.
 	protected := api.Group("", middleware.AuthMiddleware(services.Auth))
 	protected.Get("/me", handlers.Auth.Me)
 
+	// User routes
+	users := protected.Group("/users")
+	users.Patch("/:id", handlers.User.Update)
+
 	// Transaction routes
 	// transactions := protected.Group("/transactions")
 	// transactions.Get("/", handlers.Transaction.GetAll)
