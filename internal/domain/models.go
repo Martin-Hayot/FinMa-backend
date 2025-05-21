@@ -18,10 +18,19 @@ type User struct {
 	Budgets       []Budget       `json:"budgets" gorm:"foreignKey:UserID"`
 	Notifications []Notification `json:"notifications" gorm:"foreignKey:UserID"`
 	RefreshTokens []RefreshToken `json:"refresh_tokens" gorm:"foreignKey:UserID"`
+	IsVerified bool     `gorm:"default:false" json:"is_verified"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	DeletedAt time.Time `json:"deleted_at"`
+}
+
+type EmailVerificationToken struct {
+    ID        uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
+    UserID    uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
+    Token     string    `gorm:"not null" json:"token"`
+    ExpiresAt time.Time `gorm:"not null" json:"expires_at"`
+    CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
 
 type RefreshToken struct {
