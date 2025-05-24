@@ -7,30 +7,46 @@ import (
 )
 
 type User struct {
-	ID            uuid.UUID      `json:"id" gorm:"primary_key"`
-	FirstName     string         `json:"firstName" validate:"required"`
-	LastName      string         `json:"lastName" validate:"required"`
-	Email         string         `json:"email" gorm:"uniqueIndex" validate:"required,email"`
-	Password      string         `json:"password" validate:"required"`
-	Role          string         `json:"role"`
-	Transactions  []Transaction  `json:"transactions" gorm:"foreignKey:UserID"`
-	BankAccounts  []BankAccount  `json:"bank_accounts" gorm:"foreignKey:UserID"`
-	Budgets       []Budget       `json:"budgets" gorm:"foreignKey:UserID"`
-	Notifications []Notification `json:"notifications" gorm:"foreignKey:UserID"`
-	RefreshTokens []RefreshToken `json:"refresh_tokens" gorm:"foreignKey:UserID"`
-	IsVerified bool     `gorm:"default:false" json:"is_verified"`
+	ID         uuid.UUID `gorm:"primary_key"`
+	FirstName  string    `validate:"required"`
+	LastName   string    `validate:"required"`
+	Email      string    `gorm:"uniqueIndex" validate:"required,email"`
+	Password   string    `validate:"required"`
+	Role       string
+	IsVerified bool `gorm:"default:false"`
 
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	DeletedAt time.Time `json:"deleted_at"`
+	// Associations
+	PlaidItems    []PlaidItem    `gorm:"foreignKey:UserID"`
+	BankAccounts  []BankAccount  `gorm:"foreignKey:UserID"`
+	Transactions  []Transaction  `gorm:"foreignKey:UserID"`
+	Budgets       []Budget       `gorm:"foreignKey:UserID"`
+	Notifications []Notification `gorm:"foreignKey:UserID"`
+	RefreshTokens []RefreshToken `gorm:"foreignKey:UserID"`
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt time.Time
+}
+
+type PlaidItem struct {
+	ID          uuid.UUID `gorm:"primaryKey"`
+	ItemID      string    `gorm:"uniqueIndex"` // From Plaid
+	AccessToken string    `gorm:"uniqueIndex"` // From Plaid
+	Institution string    // Optional: name of the bank (from Plaid metadata)
+
+	UserID uuid.UUID
+	User   User
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type EmailVerificationToken struct {
-    ID        uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
-    UserID    uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
-    Token     string    `gorm:"not null" json:"token"`
-    ExpiresAt time.Time `gorm:"not null" json:"expires_at"`
-    CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
+	UserID    uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
+	Token     string    `gorm:"not null" json:"token"`
+	ExpiresAt time.Time `gorm:"not null" json:"expires_at"`
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
 
 type RefreshToken struct {
@@ -46,19 +62,26 @@ type RefreshToken struct {
 }
 
 type BankAccount struct {
-	ID            uuid.UUID `json:"id" gorm:"primary_key"`
-	BankName      string    `json:"bank_name"`
-	AccountType   string    `json:"account_type"`
-	AccountNumber string    `json:"account_number" gorm:"uniqueIndex"`
-	Balance       float64   `json:"balance"`
+	ID               uuid.UUID `gorm:"primary_key"`
+	AccountID        string    `gorm:"uniqueIndex"` // From Plaid
+	AccountName      string
+	OfficialName     string
+	AccountType      string
+	Mask             string // Last 4 digits etc
+	CurrentBalance   float64
+	AvailableBalance float64
 
-	UserID       uuid.UUID     `json:"user_id"`
-	User         User          `json:"user"`
-	Transactions []Transaction `json:"transactions" gorm:"foreignKey:BankAccountID"`
+	UserID uuid.UUID
+	User   User
 
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	DeletedAt time.Time `json:"deleted_at"`
+	PlaidItemID uuid.UUID
+	PlaidItem   PlaidItem
+
+	Transactions []Transaction `gorm:"foreignKey:BankAccountID"`
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt time.Time
 }
 
 type Transaction struct {

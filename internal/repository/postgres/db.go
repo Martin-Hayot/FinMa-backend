@@ -59,9 +59,13 @@ func (db *DB) Migrate() error {
 	// List all models to auto-migrate
 	err := db.DB.AutoMigrate(
 		&domain.User{},
+		&domain.PlaidItem{},
+		&domain.BankAccount{},
 		&domain.Transaction{},
 		&domain.Budget{},
-		&domain.BankAccount{},
+		&domain.Notification{},
+		&domain.RefreshToken{},
+		&domain.EmailVerificationToken{},
 	)
 
 	if err != nil {

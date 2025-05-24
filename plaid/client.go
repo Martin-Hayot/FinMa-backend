@@ -3,7 +3,6 @@ package plaid
 import (
 	"FinMa/config"
 	"context"
-	"fmt"
 	"time"
 
 	plaid "github.com/plaid/plaid-go/v31/plaid"
@@ -11,9 +10,12 @@ import (
 
 // Client wraps the Plaid API client with additional state
 type Client struct {
-	APIClient   *plaid.APIClient
-	AccessToken string
-	ItemID      string
+	APIClient         *plaid.APIClient
+	AccessToken       string
+	ItemID            string
+	PlaidCountryCodes []string
+	PlaidProducts     []string
+	RedirectURI       string
 }
 
 // NewClient creates a new Plaid client
@@ -23,9 +25,11 @@ func NewClient(cfg *config.Config) *Client {
 	configuration.AddDefaultHeader("PLAID-CLIENT-ID", cfg.PlaidClientID)
 	configuration.AddDefaultHeader("PLAID-SECRET", cfg.PlaidSecret)
 	configuration.UseEnvironment(cfg.PlaidEnv)
-
 	return &Client{
-		APIClient: plaid.NewAPIClient(configuration),
+		APIClient:         plaid.NewAPIClient(configuration),
+		PlaidCountryCodes: cfg.PlaidCountryCodes,
+		PlaidProducts:     cfg.PlaidProducts,
+		RedirectURI:       cfg.PlaidRedirectURI,
 	}
 }
 
@@ -45,37 +49,34 @@ func (c *Client) ExchangePublicToken(ctx context.Context, publicToken string) (s
 }
 
 // CreateLinkToken creates a link token for initializing Plaid Link
-func (c *Client) CreateLinkToken(ctx context.Context, cfg *config.Config) (string, error) {
+func (c *Client) CreateLinkToken(ctx context.Context, userID string) (string, error) {
 	// Convert country codes to Plaid format
 	countryCodes := []plaid.CountryCode{}
-	for _, code := range cfg.PlaidCountryCodes {
+	for _, code := range c.PlaidCountryCodes {
 		countryCodes = append(countryCodes, plaid.CountryCode(code))
 	}
 
 	// Convert products to Plaid format
 	products := []plaid.Products{}
-	for _, product := range cfg.PlaidProducts {
+	for _, product := range c.PlaidProducts {
 		products = append(products, plaid.Products(product))
 	}
 
-	// Create a unique client user ID (typically this would be your user's ID)
-	clientUserID := fmt.Sprintf("user-%d", time.Now().Unix())
-
 	// Create the link token request
 	user := plaid.LinkTokenCreateRequestUser{
-		ClientUserId: clientUserID,
+		ClientUserId: userID,
 	}
 
 	request := plaid.NewLinkTokenCreateRequest(
-		"Plaid Fiber App",
+		"FinMa Link Token",
 		"en",
 		countryCodes,
 		user,
 	)
 	request.SetProducts(products)
 
-	if cfg.PlaidRedirectURI != "" {
-		request.SetRedirectUri(cfg.PlaidRedirectURI)
+	if c.RedirectURI != "" {
+		request.SetRedirectUri(c.RedirectURI)
 	}
 
 	// Execute the request

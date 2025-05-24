@@ -69,3 +69,14 @@ func (r *UserRepository) Update(ctx context.Context, user *domain.User) error {
 func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&domain.User{}, "id = ?", id).Error
 }
+
+func (r *UserRepository) SavePlaidAccessToken(ctx context.Context, userID uuid.UUID, accessToken, itemID string) error {
+	// This method should save the Plaid access token and item ID to the user's record
+	// Assuming User has fields for PlaidAccessToken and PlaidItemID
+	return r.db.WithContext(ctx).Model(&domain.User{}).
+		Where("id = ?", userID).
+		Updates(map[string]interface{}{
+			"plaid_access_token": accessToken,
+			"plaid_item_id":      itemID,
+		}).Error
+}

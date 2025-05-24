@@ -17,6 +17,7 @@ import (
 	"FinMa/internal/api/handlers"
 	"FinMa/internal/repository/postgres"
 	"FinMa/internal/service"
+	"FinMa/plaid"
 )
 
 // Server represents the API server
@@ -47,27 +48,39 @@ func NewServer(config *config.Config, db *postgres.DB) *Server {
 
 	// Create repositories
 	userRepo := postgres.NewUserRepository(db.DB)
+	bankAccountRepo := postgres.NewBankAccountRepository(db.DB)
+	plaidItemRepo := postgres.NewPlaidItemRepository(db.DB)
+
 	// Create validator service
 	validatorService := service.NewValidatorService()
 
 	// Create services
 	authService := service.NewAuthService(userRepo, config)
-	userService := service.NewUserService(userRepo, validatorService)
+	userService := service.NewUserService(userRepo)
+	bankAccountService := service.NewBankAccountService(bankAccountRepo, plaidItemRepo, userRepo)
+	plaidItemService := service.NewPlaidItemService(plaidItemRepo, userRepo)
 	// Create services container
 	services := &service.Services{
-		Auth:      authService,
-		User:      userService,
-		Validator: validatorService,
+		Auth:        authService,
+		User:        userService,
+		BankAccount: bankAccountService,
+		Validator:   validatorService,
+		PlaidItem:   plaidItemService,
 	}
+
+	// Initialize Plaid client
+	plaidClient := plaid.NewClient(config)
 
 	// Create handlers
 	authHandler := handlers.NewAuthHandler(authService, validatorService)
 	userHandler := handlers.NewUserHandler(userService, validatorService)
+	plaidHandler := handlers.NewPlaidHandler(*plaidClient, validatorService, userService, bankAccountService, plaidItemService)
 
 	// Create handlers container
 	handlers := &handlers.Handlers{
-		Auth: *authHandler,
-		User: *userHandler,
+		Auth:  *authHandler,
+		User:  *userHandler,
+		Plaid: *plaidHandler,
 	}
 
 	// Create server

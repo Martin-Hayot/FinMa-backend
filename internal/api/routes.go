@@ -28,6 +28,11 @@ func SetupRoutes(app *fiber.App, services *service.Services, handlers *handlers.
 	users := protected.Group("/users")
 	users.Patch("/:id", handlers.User.Update)
 
+	// Plaid routes
+	plaid := protected.Group("/plaid")
+	plaid.Post("/create_link_token", handlers.Plaid.CreateLinkToken)
+	plaid.Post("/exchange_public_token", handlers.Plaid.ExchangePublicToken)
+
 	// Transaction routes
 	// transactions := protected.Group("/transactions")
 	// transactions.Get("/", handlers.Transaction.GetAll)
