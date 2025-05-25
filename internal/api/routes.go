@@ -28,10 +28,14 @@ func SetupRoutes(app *fiber.App, services *service.Services, handlers *handlers.
 	users := protected.Group("/users")
 	users.Patch("/:id", handlers.User.Update)
 
-	// Plaid routes
-	plaid := protected.Group("/plaid")
-	plaid.Post("/create_link_token", handlers.Plaid.CreateLinkToken)
-	plaid.Post("/exchange_public_token", handlers.Plaid.ExchangePublicToken)
+	// GoCardless routes
+	gocardless := protected.Group("/gocardless")
+	gocardless.Post("/connect", handlers.GoCardless.Connect)
+	gocardless.Get("/callback", handlers.GoCardless.Callback)
+	gocardless.Get("/accounts", handlers.GoCardless.GetAccounts)
+	gocardless.Post("/accounts/refresh", handlers.GoCardless.RefreshAccounts)
+	gocardless.Delete("/items/:gocardless_item_id", handlers.GoCardless.DisconnectBank)
+	gocardless.Get("/accounts/:account_id/transactions", handlers.GoCardless.GetTransactions)
 
 	// Transaction routes
 	// transactions := protected.Group("/transactions")

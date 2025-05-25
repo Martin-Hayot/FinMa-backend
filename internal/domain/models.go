@@ -16,29 +16,16 @@ type User struct {
 	IsVerified bool `gorm:"default:false"`
 
 	// Associations
-	PlaidItems    []PlaidItem    `gorm:"foreignKey:UserID"`
-	BankAccounts  []BankAccount  `gorm:"foreignKey:UserID"`
-	Transactions  []Transaction  `gorm:"foreignKey:UserID"`
-	Budgets       []Budget       `gorm:"foreignKey:UserID"`
-	Notifications []Notification `gorm:"foreignKey:UserID"`
-	RefreshTokens []RefreshToken `gorm:"foreignKey:UserID"`
+	GoCardlessItems []GoCardlessItem `gorm:"foreignKey:UserID"`
+	BankAccounts    []BankAccount    `gorm:"foreignKey:UserID"`
+	Transactions    []Transaction    `gorm:"foreignKey:UserID"`
+	Budgets         []Budget         `gorm:"foreignKey:UserID"`
+	Notifications   []Notification   `gorm:"foreignKey:UserID"`
+	RefreshTokens   []RefreshToken   `gorm:"foreignKey:UserID"`
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt time.Time
-}
-
-type PlaidItem struct {
-	ID          uuid.UUID `gorm:"primaryKey"`
-	ItemID      string    `gorm:"uniqueIndex"` // From Plaid
-	AccessToken string    `gorm:"uniqueIndex"` // From Plaid
-	Institution string    // Optional: name of the bank (from Plaid metadata)
-
-	UserID uuid.UUID
-	User   User
-
-	CreatedAt time.Time
-	UpdatedAt time.Time
 }
 
 type EmailVerificationToken struct {
@@ -61,27 +48,46 @@ type RefreshToken struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type GoCardlessItem struct {
+	ID           uuid.UUID  `gorm:"primaryKey" json:"id"`
+	AccessToken  string     `gorm:"uniqueIndex;not null" json:"-"` // Hidden from JSON
+	RefreshToken string     `gorm:"not null" json:"-"`             // Hidden from JSON
+	ProviderName string     `gorm:"not null" json:"provider_name"`
+	ExpiresAt    *time.Time `json:"expires_at"`
+	LastSyncTime *time.Time `json:"last_sync_time"`
+
+	UserID uuid.UUID `gorm:"not null;index" json:"user_id"`
+	User   User      `gorm:"foreignKey:UserID" json:"-"`
+
+	// Association with bank accounts
+	BankAccounts []BankAccount `gorm:"foreignKey:GoCardlessItemID" json:"bank_accounts,omitempty"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 type BankAccount struct {
-	ID               uuid.UUID `gorm:"primary_key"`
-	AccountID        string    `gorm:"uniqueIndex"` // From Plaid
-	AccountName      string
-	OfficialName     string
-	AccountType      string
-	Mask             string // Last 4 digits etc
-	CurrentBalance   float64
-	AvailableBalance float64
+	ID               uuid.UUID `gorm:"primaryKey" json:"id"`
+	AccountID        string    `gorm:"uniqueIndex;not null" json:"account_id"` // GoCardless account ID
+	Name             string    `gorm:"not null" json:"name"`
+	Type             string    `gorm:"not null" json:"type"`
+	Currency         string    `gorm:"not null" json:"currency"`
+	InstitutionName  string    `json:"institution_name"`
+	BalanceAvailable float64   `json:"balance_available"`
+	BalanceCurrent   float64   `json:"balance_current"`
+	IBAN             string    `json:"iban,omitempty"`
 
-	UserID uuid.UUID
-	User   User
+	UserID uuid.UUID `gorm:"not null;index" json:"user_id"`
+	User   User      `gorm:"foreignKey:UserID" json:"-"`
 
-	PlaidItemID uuid.UUID
-	PlaidItem   PlaidItem
+	GoCardlessItemID uuid.UUID      `gorm:"not null;index" json:"gocardless_item_id"`
+	GoCardlessItem   GoCardlessItem `gorm:"foreignKey:GoCardlessItemID" json:"-"`
 
-	Transactions []Transaction `gorm:"foreignKey:BankAccountID"`
+	// Association with transactions
+	Transactions []Transaction `gorm:"foreignKey:BankAccountID" json:"transactions,omitempty"`
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt time.Time
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type Transaction struct {

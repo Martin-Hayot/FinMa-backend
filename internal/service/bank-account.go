@@ -13,50 +13,48 @@ import (
 
 // BankAccountService defines operations for bank account management
 type BankAccountService interface {
-	CreateBankAccount(ctx context.Context, userID uuid.UUID, plaidItemID uuid.UUID, accountData domain.BankAccount) (domain.BankAccount, error)
-	CreateBankAccountsFromPlaid(ctx context.Context, userID uuid.UUID, plaidItemID uuid.UUID, accounts []domain.BankAccount) ([]domain.BankAccount, error)
+	CreateBankAccount(ctx context.Context, userID uuid.UUID, goCardlessItemID uuid.UUID, accountData domain.BankAccount) (domain.BankAccount, error)
 	GetUserBankAccounts(ctx context.Context, userID uuid.UUID) ([]domain.BankAccount, error)
 	GetBankAccountByID(ctx context.Context, id uuid.UUID) (domain.BankAccount, error)
-	GetBankAccountsByPlaidItem(ctx context.Context, plaidItemID uuid.UUID) ([]domain.BankAccount, error)
+	GetBankAccountsByGoCardlessItem(ctx context.Context, goCardlessItemID uuid.UUID) ([]domain.BankAccount, error)
 	UpdateBankAccount(ctx context.Context, bankAccount *domain.BankAccount) error
 	DeleteBankAccount(ctx context.Context, id uuid.UUID) error
-	SyncBankAccountBalances(ctx context.Context, plaidItemID uuid.UUID, accountBalances map[string]domain.BankAccount) error
 }
 
 type bankAccountService struct {
-	bankAccountRepo repository.BankAccountRepository
-	plaidItemRepo   repository.PlaidItemRepository
-	userRepo        repository.UserRepository
+	bankAccountRepo    repository.BankAccountRepository
+	goCardlessItemRepo repository.GoCardlessItemRepository
+	userRepo           repository.UserRepository
 }
 
 // NewBankAccountService creates a new bank account service
 func NewBankAccountService(
 	bankAccountRepo repository.BankAccountRepository,
-	plaidItemRepo repository.PlaidItemRepository,
+	goCardlessItemRepo repository.GoCardlessItemRepository,
 	userRepo repository.UserRepository,
 ) BankAccountService {
 	return &bankAccountService{
-		bankAccountRepo: bankAccountRepo,
-		plaidItemRepo:   plaidItemRepo,
-		userRepo:        userRepo,
+		bankAccountRepo:    bankAccountRepo,
+		goCardlessItemRepo: goCardlessItemRepo,
+		userRepo:           userRepo,
 	}
 }
 
 // CreateBankAccount creates a new bank account for a user
-func (s *bankAccountService) CreateBankAccount(ctx context.Context, userID uuid.UUID, plaidItemID uuid.UUID, accountData domain.BankAccount) (domain.BankAccount, error) {
+func (s *bankAccountService) CreateBankAccount(ctx context.Context, userID uuid.UUID, goCardlessItemID uuid.UUID, accountData domain.BankAccount) (domain.BankAccount, error) {
 	// Verify user exists
 	_, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return domain.BankAccount{}, errors.New("user not found")
 	}
 
-	// Verify Plaid item exists and belongs to user
-	plaidItem, err := s.plaidItemRepo.GetByID(ctx, plaidItemID)
+	// Verify GoCardless item exists and belongs to user
+	goCardlessItem, err := s.goCardlessItemRepo.GetByID(ctx, goCardlessItemID)
 	if err != nil {
-		return domain.BankAccount{}, errors.New("plaid item not found")
+		return domain.BankAccount{}, errors.New("gocardless item not found")
 	}
-	if plaidItem.UserID != userID {
-		return domain.BankAccount{}, errors.New("plaid item does not belong to user")
+	if goCardlessItem.UserID != userID {
+		return domain.BankAccount{}, errors.New("gocardless item does not belong to user")
 	}
 
 	// Check if account already exists
@@ -71,7 +69,7 @@ func (s *bankAccountService) CreateBankAccount(ctx context.Context, userID uuid.
 	// Set required fields
 	accountData.ID = uuid.New()
 	accountData.UserID = userID
-	accountData.PlaidItemID = plaidItemID
+	accountData.GoCardlessItemID = goCardlessItemID
 	accountData.CreatedAt = time.Now()
 	accountData.UpdatedAt = time.Now()
 
@@ -83,8 +81,8 @@ func (s *bankAccountService) CreateBankAccount(ctx context.Context, userID uuid.
 	return accountData, nil
 }
 
-// CreateBankAccountsFromPlaid creates multiple bank accounts from Plaid data
-func (s *bankAccountService) CreateBankAccountsFromPlaid(ctx context.Context, userID uuid.UUID, plaidItemID uuid.UUID, accounts []domain.BankAccount) ([]domain.BankAccount, error) {
+// CreateBankAccountsFromGoCardless creates multiple bank accounts from GoCardless data
+func (s *bankAccountService) CreateBankAccountsFromGoCardless(ctx context.Context, userID uuid.UUID, goCardlessItemID uuid.UUID, accounts []domain.BankAccount) ([]domain.BankAccount, error) {
 	var createdAccounts []domain.BankAccount
 
 	for _, account := range accounts {
@@ -98,7 +96,7 @@ func (s *bankAccountService) CreateBankAccountsFromPlaid(ctx context.Context, us
 		}
 
 		// Create the account
-		createdAccount, err := s.CreateBankAccount(ctx, userID, plaidItemID, account)
+		createdAccount, err := s.CreateBankAccount(ctx, userID, goCardlessItemID, account)
 		if err != nil {
 			continue // Skip failed accounts and continue with others
 		}
@@ -119,9 +117,9 @@ func (s *bankAccountService) GetBankAccountByID(ctx context.Context, id uuid.UUI
 	return s.bankAccountRepo.GetByID(ctx, id)
 }
 
-// GetBankAccountsByPlaidItem retrieves all bank accounts for a Plaid item
-func (s *bankAccountService) GetBankAccountsByPlaidItem(ctx context.Context, plaidItemID uuid.UUID) ([]domain.BankAccount, error) {
-	return s.bankAccountRepo.GetByPlaidItemID(ctx, plaidItemID)
+// GetBankAccountsByGoCardlessItem retrieves all bank accounts for a gocardless item
+func (s *bankAccountService) GetBankAccountsByGoCardlessItem(ctx context.Context, goCardlessItemID uuid.UUID) ([]domain.BankAccount, error) {
+	return s.bankAccountRepo.GetByGoCardlessItemID(ctx, goCardlessItemID)
 }
 
 // UpdateBankAccount updates a bank account
@@ -133,28 +131,4 @@ func (s *bankAccountService) UpdateBankAccount(ctx context.Context, bankAccount 
 // DeleteBankAccount deletes a bank account
 func (s *bankAccountService) DeleteBankAccount(ctx context.Context, id uuid.UUID) error {
 	return s.bankAccountRepo.Delete(ctx, id)
-}
-
-// SyncBankAccountBalances updates account balances from Plaid data
-func (s *bankAccountService) SyncBankAccountBalances(ctx context.Context, plaidItemID uuid.UUID, accountBalances map[string]domain.BankAccount) error {
-	// Get existing accounts for this Plaid item
-	existingAccounts, err := s.bankAccountRepo.GetByPlaidItemID(ctx, plaidItemID)
-	if err != nil {
-		return err
-	}
-
-	// Update balances for existing accounts
-	for _, account := range existingAccounts {
-		if updatedData, exists := accountBalances[account.AccountID]; exists {
-			account.CurrentBalance = updatedData.CurrentBalance
-			account.AvailableBalance = updatedData.AvailableBalance
-			account.UpdatedAt = time.Now()
-
-			if err := s.bankAccountRepo.Update(ctx, &account); err != nil {
-				continue // Continue with other accounts if one fails
-			}
-		}
-	}
-
-	return nil
 }

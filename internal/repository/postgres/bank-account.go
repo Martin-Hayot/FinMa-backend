@@ -32,7 +32,7 @@ func (r *BankAccountRepository) GetByID(ctx context.Context, id uuid.UUID) (doma
 	var bankAccount domain.BankAccount
 	result := r.db.WithContext(ctx).
 		Preload("User").
-		Preload("PlaidItem").
+		Preload("GoCardlessItem").
 		Preload("Transactions").
 		First(&bankAccount, "id = ?", id)
 
@@ -49,7 +49,7 @@ func (r *BankAccountRepository) GetByID(ctx context.Context, id uuid.UUID) (doma
 func (r *BankAccountRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]domain.BankAccount, error) {
 	var bankAccounts []domain.BankAccount
 	result := r.db.WithContext(ctx).
-		Preload("PlaidItem").
+		Preload("GoCardlessItem").
 		Preload("Transactions").
 		Where("user_id = ?", userID).
 		Find(&bankAccounts)
@@ -60,12 +60,12 @@ func (r *BankAccountRepository) GetByUserID(ctx context.Context, userID uuid.UUI
 	return bankAccounts, nil
 }
 
-// GetByAccountID retrieves a bank account by Plaid account ID
+// GetByAccountID retrieves a bank account by GoCardless account ID
 func (r *BankAccountRepository) GetByAccountID(ctx context.Context, accountID string) (domain.BankAccount, error) {
 	var bankAccount domain.BankAccount
 	result := r.db.WithContext(ctx).
 		Preload("User").
-		Preload("PlaidItem").
+		Preload("GoCardlessItem").
 		Preload("Transactions").
 		First(&bankAccount, "account_id = ?", accountID)
 
@@ -78,14 +78,14 @@ func (r *BankAccountRepository) GetByAccountID(ctx context.Context, accountID st
 	return bankAccount, nil
 }
 
-// GetByPlaidItemID retrieves all bank accounts for a specific Plaid item
-func (r *BankAccountRepository) GetByPlaidItemID(ctx context.Context, plaidItemID uuid.UUID) ([]domain.BankAccount, error) {
+// GetByGoCardlessItemID retrieves all bank accounts for a specific GoCardless item
+func (r *BankAccountRepository) GetByGoCardlessItemID(ctx context.Context, goCardlessItemID uuid.UUID) ([]domain.BankAccount, error) {
 	var bankAccounts []domain.BankAccount
 	result := r.db.WithContext(ctx).
 		Preload("User").
-		Preload("PlaidItem").
+		Preload("GoCardlessItem").
 		Preload("Transactions").
-		Where("plaid_item_id = ?", plaidItemID).
+		Where("gocardless_item_id = ?", goCardlessItemID).
 		Find(&bankAccounts)
 
 	if result.Error != nil {
@@ -109,4 +109,62 @@ func (r *BankAccountRepository) ExistsByAccountID(ctx context.Context, accountID
 	var count int64
 	err := r.db.WithContext(ctx).Model(&domain.BankAccount{}).Where("account_id = ?", accountID).Count(&count).Error
 	return count > 0, err
+}
+
+// GetByGoCardlessItemIDWithTransactions retrieves bank accounts with transactions for a GoCardless item
+func (r *BankAccountRepository) GetByGoCardlessItemIDWithTransactions(ctx context.Context, goCardlessItemID uuid.UUID) ([]domain.BankAccount, error) {
+	var bankAccounts []domain.BankAccount
+	result := r.db.WithContext(ctx).
+		Preload("User").
+		Preload("GoCardlessItem").
+		Preload("Transactions", func(db *gorm.DB) *gorm.DB {
+			return db.Order("date DESC").Limit(100) // Most recent 100 transactions
+		}).
+		Where("gocardless_item_id = ?", goCardlessItemID).
+		Find(&bankAccounts)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return bankAccounts, nil
+}
+
+// GetUserAccountsWithBalance retrieves user's bank accounts with current balance information
+func (r *BankAccountRepository) GetUserAccountsWithBalance(ctx context.Context, userID uuid.UUID) ([]domain.BankAccount, error) {
+	var bankAccounts []domain.BankAccount
+	result := r.db.WithContext(ctx).
+		Preload("GoCardlessItem").
+		Select("id", "account_id", "name", "type", "currency", "institution_name",
+			"balance_available", "balance_current", "iban", "user_id",
+			"gocardless_item_id", "created_at", "updated_at").
+		Where("user_id = ?", userID).
+		Find(&bankAccounts)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return bankAccounts, nil
+}
+
+// UpdateBalance updates the balance for a specific bank account
+func (r *BankAccountRepository) UpdateBalance(ctx context.Context, accountID string, availableBalance, currentBalance float64) error {
+	return r.db.WithContext(ctx).
+		Model(&domain.BankAccount{}).
+		Where("account_id = ?", accountID).
+		Updates(map[string]interface{}{
+			"balance_available": availableBalance,
+			"balance_current":   currentBalance,
+		}).Error
+}
+
+// CountByUserID returns the number of bank accounts for a user
+func (r *BankAccountRepository) CountByUserID(ctx context.Context, userID uuid.UUID) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&domain.BankAccount{}).Where("user_id = ?", userID).Count(&count).Error
+	return count, err
+}
+
+// DeleteByGoCardlessItemID deletes all bank accounts associated with a GoCardless item
+func (r *BankAccountRepository) DeleteByGoCardlessItemID(ctx context.Context, goCardlessItemID uuid.UUID) error {
+	return r.db.WithContext(ctx).Where("gocardless_item_id = ?", goCardlessItemID).Delete(&domain.BankAccount{}).Error
 }

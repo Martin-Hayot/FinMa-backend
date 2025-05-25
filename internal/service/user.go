@@ -23,8 +23,6 @@ type UserService interface {
 	// ChangePassword(ctx context.Context, id uuid.UUID, req dto.ChangePasswordRequest) error
 	DeleteAccount(ctx context.Context, id uuid.UUID, password string) error
 
-	// Plaid integration
-	SavePlaidAccessToken(ctx context.Context, userID uuid.UUID, accessToken string, itemID string) error
 	// Preference management
 	// GetUserPreferences(ctx context.Context, userID uuid.UUID) (dto.UserPreferencesResponse, error)
 	// UpdateUserPreferences(ctx context.Context, userID uuid.UUID, req dto.UpdatePreferencesRequest) error
@@ -115,17 +113,6 @@ func (s *userService) GetUserByID(ctx context.Context, id uuid.UUID) (dto.UserRe
 		CreatedAt: user.CreatedAt.Format(time.RFC3339),
 		UpdatedAt: user.UpdatedAt.Format(time.RFC3339),
 	}, nil
-}
-
-// SavePlaidAccessToken saves the Plaid access token and item ID for a user
-func (s *userService) SavePlaidAccessToken(ctx context.Context, userID uuid.UUID, accessToken string, itemID string) error {
-	// Validate access token and item ID
-	if accessToken == "" || itemID == "" {
-		return errors.New("invalid access token or item ID")
-	}
-
-	// Save the access token and item ID to the user repository
-	return s.userRepo.SavePlaidAccessToken(ctx, userID, accessToken, itemID)
 }
 
 // NewUserService creates a new user service

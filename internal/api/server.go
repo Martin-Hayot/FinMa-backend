@@ -17,7 +17,6 @@ import (
 	"FinMa/internal/api/handlers"
 	"FinMa/internal/repository/postgres"
 	"FinMa/internal/service"
-	"FinMa/plaid"
 )
 
 // Server represents the API server
@@ -49,7 +48,7 @@ func NewServer(config *config.Config, db *postgres.DB) *Server {
 	// Create repositories
 	userRepo := postgres.NewUserRepository(db.DB)
 	bankAccountRepo := postgres.NewBankAccountRepository(db.DB)
-	plaidItemRepo := postgres.NewPlaidItemRepository(db.DB)
+	goCardlessItemRepo := postgres.NewGoCardlessItemRepository(db.DB)
 
 	// Create validator service
 	validatorService := service.NewValidatorService()
@@ -57,30 +56,27 @@ func NewServer(config *config.Config, db *postgres.DB) *Server {
 	// Create services
 	authService := service.NewAuthService(userRepo, config)
 	userService := service.NewUserService(userRepo)
-	bankAccountService := service.NewBankAccountService(bankAccountRepo, plaidItemRepo, userRepo)
-	plaidItemService := service.NewPlaidItemService(plaidItemRepo, userRepo)
+	bankAccountService := service.NewBankAccountService(bankAccountRepo, goCardlessItemRepo, userRepo)
+	goCardlessService := service.NewGoCardlessService(goCardlessItemRepo, bankAccountRepo, userRepo)
 	// Create services container
 	services := &service.Services{
 		Auth:        authService,
 		User:        userService,
+		GoCardless:  goCardlessService,
 		BankAccount: bankAccountService,
 		Validator:   validatorService,
-		PlaidItem:   plaidItemService,
 	}
-
-	// Initialize Plaid client
-	plaidClient := plaid.NewClient(config)
 
 	// Create handlers
 	authHandler := handlers.NewAuthHandler(authService, validatorService)
 	userHandler := handlers.NewUserHandler(userService, validatorService)
-	plaidHandler := handlers.NewPlaidHandler(*plaidClient, validatorService, userService, bankAccountService, plaidItemService)
+	goCardlessHandler := handlers.NewGoCardlessHandler(goCardlessService, validatorService)
 
 	// Create handlers container
 	handlers := &handlers.Handlers{
-		Auth:  *authHandler,
-		User:  *userHandler,
-		Plaid: *plaidHandler,
+		Auth:       *authHandler,
+		User:       *userHandler,
+		GoCardless: *goCardlessHandler,
 	}
 
 	// Create server

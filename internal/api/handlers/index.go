@@ -1,7 +1,7 @@
 package handlers
 
 type Handlers struct {
-	Auth  AuthHandler
-	User  UserHandler
-	Plaid PlaidHandler
+	Auth       AuthHandler
+	User       UserHandler
+	GoCardless GoCardlessHandler
 }

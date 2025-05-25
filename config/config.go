@@ -3,9 +3,6 @@ package config
 import (
 	"log"
 	"os"
-	"strings"
-
-	plaid "github.com/plaid/plaid-go/v31/plaid"
 )
 
 type DatabaseConfig struct {
@@ -19,12 +16,8 @@ type DatabaseConfig struct {
 }
 
 type Config struct {
-	PlaidClientID      string
-	PlaidSecret        string
-	PlaidEnv           plaid.Environment
-	PlaidProducts      []string
-	PlaidCountryCodes  []string
-	PlaidRedirectURI   string
+	GoCardlessClientID string
+	GoCardlessSecret   string
 	Port               string
 	AccessTokenSecret  string
 	RefreshTokenSecret string
@@ -37,10 +30,8 @@ func LoadConfig() *Config {
 		AccessTokenSecret:  getEnv("ACCESS_TOKEN_SECRET", "default_secret"),
 		RefreshTokenSecret: getEnv("REFRESH_TOKEN_SECRET", "default_secret"),
 		Port:               getEnv("PORT", "8080"),
-		PlaidClientID:      getEnv("PLAID_CLIENT_ID", ""),
-		PlaidSecret:        getEnv("PLAID_SECRET", ""),
-		PlaidProducts:      strings.Split(getEnv("PLAID_PRODUCTS", "transactions"), ","),
-		PlaidCountryCodes:  strings.Split(getEnv("PLAID_COUNTRY_CODES", "US"), ","),
+		GoCardlessClientID: getEnv("GOCARDLESS_CLIENT_ID", ""),
+		GoCardlessSecret:   getEnv("GOCARDLESS_SECRET", ""),
 		Database: DatabaseConfig{
 			Host:     getEnv("DB_HOST", "localhost"),
 			Port:     getEnv("DB_PORT", "5432"),
@@ -52,16 +43,8 @@ func LoadConfig() *Config {
 		},
 	}
 	// Set default values
-	if config.PlaidClientID == "" || config.PlaidSecret == "" || config.Database.User == "" || config.Database.Password == "" {
-		log.Fatal("Error: PLAID_SECRET, PLAID_CLIENT_ID, DB_USERNAME or DB_PASSWORD is not set. Did you copy .env.example to .env and fill it out?")
-	}
-
-	// Set Plaid environment
-	plaidEnv := getEnv("PLAID_ENV", "sandbox")
-	if plaidEnv == "production" {
-		config.PlaidEnv = plaid.Production
-	} else {
-		config.PlaidEnv = plaid.Sandbox
+	if config.GoCardlessClientID == "" || config.GoCardlessSecret == "" || config.Database.User == "" || config.Database.Password == "" {
+		log.Fatal("Error: GOCARDLESS_CLIENT_ID, GOCARDLESS_SECRET, DB_USERNAME or DB_PASSWORD is not set. Did you copy .env.example to .env and fill it out?")
 	}
 
 	return config

@@ -3,7 +3,7 @@ package service
 type Services struct {
 	Auth        AuthService
 	User        UserService
+	GoCardless  GoCardlessService
 	BankAccount BankAccountService
-	PlaidItem   PlaidItemService
 	Validator   ValidatorService
 }
