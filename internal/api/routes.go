@@ -30,12 +30,8 @@ func SetupRoutes(app *fiber.App, services *service.Services, handlers *handlers.
 
 	// GoCardless routes
 	gocardless := protected.Group("/gocardless")
-	gocardless.Post("/connect", handlers.GoCardless.Connect)
-	gocardless.Get("/callback", handlers.GoCardless.Callback)
-	gocardless.Get("/accounts", handlers.GoCardless.GetAccounts)
-	gocardless.Post("/accounts/refresh", handlers.GoCardless.RefreshAccounts)
-	gocardless.Delete("/items/:gocardless_item_id", handlers.GoCardless.DisconnectBank)
-	gocardless.Get("/accounts/:account_id/transactions", handlers.GoCardless.GetTransactions)
+	gocardless.Get("/institutions/:country_code", handlers.GoCardless.GetInstitutions)
+	gocardless.Get("/token/status", handlers.GoCardless.GetTokenStatus)
 
 	// Transaction routes
 	// transactions := protected.Group("/transactions")

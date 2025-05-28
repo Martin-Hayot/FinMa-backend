@@ -79,7 +79,7 @@ func (r *BankAccountRepository) GetByAccountID(ctx context.Context, accountID st
 }
 
 // GetByGoCardlessItemID retrieves all bank accounts for a specific GoCardless item
-func (r *BankAccountRepository) GetByGoCardlessItemID(ctx context.Context, goCardlessItemID uuid.UUID) ([]domain.BankAccount, error) {
+func (r *BankAccountRepository) GetByGclItemID(ctx context.Context, goCardlessItemID uuid.UUID) ([]domain.BankAccount, error) {
 	var bankAccounts []domain.BankAccount
 	result := r.db.WithContext(ctx).
 		Preload("User").

@@ -16,12 +16,12 @@ type User struct {
 	IsVerified bool `gorm:"default:false"`
 
 	// Associations
-	GoCardlessItems []GoCardlessItem `gorm:"foreignKey:UserID"`
-	BankAccounts    []BankAccount    `gorm:"foreignKey:UserID"`
-	Transactions    []Transaction    `gorm:"foreignKey:UserID"`
-	Budgets         []Budget         `gorm:"foreignKey:UserID"`
-	Notifications   []Notification   `gorm:"foreignKey:UserID"`
-	RefreshTokens   []RefreshToken   `gorm:"foreignKey:UserID"`
+	GoCardlessItems []GclItem      `gorm:"foreignKey:UserID"`
+	BankAccounts    []BankAccount  `gorm:"foreignKey:UserID"`
+	Transactions    []Transaction  `gorm:"foreignKey:UserID"`
+	Budgets         []Budget       `gorm:"foreignKey:UserID"`
+	Notifications   []Notification `gorm:"foreignKey:UserID"`
+	RefreshTokens   []RefreshToken `gorm:"foreignKey:UserID"`
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -48,7 +48,7 @@ type RefreshToken struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type GoCardlessItem struct {
+type GclItem struct {
 	ID           uuid.UUID  `gorm:"primaryKey" json:"id"`
 	AccessToken  string     `gorm:"uniqueIndex;not null" json:"-"` // Hidden from JSON
 	RefreshToken string     `gorm:"not null" json:"-"`             // Hidden from JSON
@@ -59,8 +59,8 @@ type GoCardlessItem struct {
 	UserID uuid.UUID `gorm:"not null;index" json:"user_id"`
 	User   User      `gorm:"foreignKey:UserID" json:"-"`
 
-	// Association with bank accounts
-	BankAccounts []BankAccount `gorm:"foreignKey:GoCardlessItemID" json:"bank_accounts,omitempty"`
+	// Association with bank accounts - fix the foreign key reference
+	BankAccounts []BankAccount `gorm:"foreignKey:GclItemID" json:"bank_accounts,omitempty"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -80,8 +80,8 @@ type BankAccount struct {
 	UserID uuid.UUID `gorm:"not null;index" json:"user_id"`
 	User   User      `gorm:"foreignKey:UserID" json:"-"`
 
-	GoCardlessItemID uuid.UUID      `gorm:"not null;index" json:"gocardless_item_id"`
-	GoCardlessItem   GoCardlessItem `gorm:"foreignKey:GoCardlessItemID" json:"-"`
+	GclItemID uuid.UUID `gorm:"not null;index" json:"gocardless_item_id"`
+	GclItem   GclItem   `gorm:"foreignKey:GclItemID" json:"-"`
 
 	// Association with transactions
 	Transactions []Transaction `gorm:"foreignKey:BankAccountID" json:"transactions,omitempty"`

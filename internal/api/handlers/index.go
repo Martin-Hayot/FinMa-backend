@@ -3,5 +3,5 @@ package handlers
 type Handlers struct {
 	Auth       AuthHandler
 	User       UserHandler
-	GoCardless GoCardlessHandler
+	GoCardless GclHandler
 }

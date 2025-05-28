@@ -16,32 +16,32 @@ type BankAccountService interface {
 	CreateBankAccount(ctx context.Context, userID uuid.UUID, goCardlessItemID uuid.UUID, accountData domain.BankAccount) (domain.BankAccount, error)
 	GetUserBankAccounts(ctx context.Context, userID uuid.UUID) ([]domain.BankAccount, error)
 	GetBankAccountByID(ctx context.Context, id uuid.UUID) (domain.BankAccount, error)
-	GetBankAccountsByGoCardlessItem(ctx context.Context, goCardlessItemID uuid.UUID) ([]domain.BankAccount, error)
+	GetBankAccountsByGclItem(ctx context.Context, gclItemID uuid.UUID) ([]domain.BankAccount, error)
 	UpdateBankAccount(ctx context.Context, bankAccount *domain.BankAccount) error
 	DeleteBankAccount(ctx context.Context, id uuid.UUID) error
 }
 
 type bankAccountService struct {
-	bankAccountRepo    repository.BankAccountRepository
-	goCardlessItemRepo repository.GoCardlessItemRepository
-	userRepo           repository.UserRepository
+	bankAccountRepo repository.BankAccountRepository
+	gclItemRepo     repository.GclItemRepository
+	userRepo        repository.UserRepository
 }
 
 // NewBankAccountService creates a new bank account service
 func NewBankAccountService(
 	bankAccountRepo repository.BankAccountRepository,
-	goCardlessItemRepo repository.GoCardlessItemRepository,
+	gclItemRepo repository.GclItemRepository,
 	userRepo repository.UserRepository,
 ) BankAccountService {
 	return &bankAccountService{
-		bankAccountRepo:    bankAccountRepo,
-		goCardlessItemRepo: goCardlessItemRepo,
-		userRepo:           userRepo,
+		bankAccountRepo: bankAccountRepo,
+		gclItemRepo:     gclItemRepo,
+		userRepo:        userRepo,
 	}
 }
 
 // CreateBankAccount creates a new bank account for a user
-func (s *bankAccountService) CreateBankAccount(ctx context.Context, userID uuid.UUID, goCardlessItemID uuid.UUID, accountData domain.BankAccount) (domain.BankAccount, error) {
+func (s *bankAccountService) CreateBankAccount(ctx context.Context, userID uuid.UUID, gclItemID uuid.UUID, accountData domain.BankAccount) (domain.BankAccount, error) {
 	// Verify user exists
 	_, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
@@ -49,11 +49,11 @@ func (s *bankAccountService) CreateBankAccount(ctx context.Context, userID uuid.
 	}
 
 	// Verify GoCardless item exists and belongs to user
-	goCardlessItem, err := s.goCardlessItemRepo.GetByID(ctx, goCardlessItemID)
+	gclItem, err := s.gclItemRepo.GetByID(ctx, gclItemID)
 	if err != nil {
 		return domain.BankAccount{}, errors.New("gocardless item not found")
 	}
-	if goCardlessItem.UserID != userID {
+	if gclItem.UserID != userID {
 		return domain.BankAccount{}, errors.New("gocardless item does not belong to user")
 	}
 
@@ -69,7 +69,7 @@ func (s *bankAccountService) CreateBankAccount(ctx context.Context, userID uuid.
 	// Set required fields
 	accountData.ID = uuid.New()
 	accountData.UserID = userID
-	accountData.GoCardlessItemID = goCardlessItemID
+	accountData.GclItemID = gclItemID
 	accountData.CreatedAt = time.Now()
 	accountData.UpdatedAt = time.Now()
 
@@ -117,9 +117,9 @@ func (s *bankAccountService) GetBankAccountByID(ctx context.Context, id uuid.UUI
 	return s.bankAccountRepo.GetByID(ctx, id)
 }
 
-// GetBankAccountsByGoCardlessItem retrieves all bank accounts for a gocardless item
-func (s *bankAccountService) GetBankAccountsByGoCardlessItem(ctx context.Context, goCardlessItemID uuid.UUID) ([]domain.BankAccount, error) {
-	return s.bankAccountRepo.GetByGoCardlessItemID(ctx, goCardlessItemID)
+// GetBankAccountsByGclItem retrieves all bank accounts for a gocardless item
+func (s *bankAccountService) GetBankAccountsByGclItem(ctx context.Context, gclItemID uuid.UUID) ([]domain.BankAccount, error) {
+	return s.bankAccountRepo.GetByGclItemID(ctx, gclItemID)
 }
 
 // UpdateBankAccount updates a bank account
