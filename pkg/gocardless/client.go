@@ -6,8 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -15,6 +18,7 @@ const (
 	TokenEndpoint        = "/token/new/"
 	RefreshEndpoint      = "/token/refresh/"
 	InstitutionsEndpoint = "/institutions/"
+	RequisitionsEndpoint = "/requisitions/"
 )
 
 type Client struct {
@@ -40,6 +44,94 @@ func NewClient(secretID, secretKey string) *Client {
 		SecretID:  secretID,
 		SecretKey: secretKey,
 	}
+}
+
+func (c *Client) CreateRequisition(UserID uuid.UUID, institutionID, redirectURL string) (*dto.GoCardlessCreateRequisitionResponse, error) {
+	accessToken, err := c.GetValidAccessToken()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get access token: %w", err)
+	}
+
+	url := fmt.Sprintf("%s%s", c.BaseURL, RequisitionsEndpoint)
+
+	// Create a unique reference by combining UserID and institutionID
+	uniqueReference := fmt.Sprintf("%s_%s", UserID.String(), institutionID)
+
+	jsonData, err := json.Marshal(dto.GoCardlessCreateRequisitionRequest{
+		InstitutionID: institutionID,
+		RedirectURL:   redirectURL,
+		Reference:     uniqueReference, // Now unique per user-institution combination
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request body: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return nil, parseGoCardlessError(resp)
+	}
+
+	var linkResp dto.GoCardlessCreateRequisitionResponse
+	if err := json.NewDecoder(resp.Body).Decode(&linkResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &linkResp, nil
+}
+
+func (c *Client) GetRequisition(userID uuid.UUID, requisitionID string) (*dto.GoCardlessGetRequisitionResponse, error) {
+	accessToken, err := c.GetValidAccessToken()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get access token: %w", err)
+	}
+
+	url := fmt.Sprintf("%s%s%s/", c.BaseURL, RequisitionsEndpoint, requisitionID)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, parseGoCardlessError(resp)
+	}
+
+	var requisition dto.GoCardlessGetRequisitionResponse
+	if err := json.NewDecoder(resp.Body).Decode(&requisition); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	// Security check: Verify the requisition belongs to the user
+	// The reference should start with the userID (format: "userID_institutionID")
+	expectedPrefix := userID.String() + "_"
+	if !strings.HasPrefix(requisition.Reference, expectedPrefix) {
+		return nil, fmt.Errorf("access denied: requisition does not belong to user")
+	}
+
+	return &requisition, nil
 }
 
 // GetValidAccessToken returns a valid access token, refreshing if necessary

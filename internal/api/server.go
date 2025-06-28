@@ -47,12 +47,12 @@ func NewServer(config *config.Config, db *postgres.DB) *Server {
 	}))
 
 	// Create Gocardless client
-	gocardlessClient := gocardless.NewClient(config.GoCardlessClientID, config.GoCardlessSecret)
+	gocardlessClient := gocardless.NewClient(config.GoCardless.ClientID, config.GoCardless.Secret)
 
 	// Create repositories
 	userRepo := postgres.NewUserRepository(db.DB)
 	bankAccountRepo := postgres.NewBankAccountRepository(db.DB)
-	gclItemRepo := postgres.NewGclItemRepository(db.DB)
+	requisitionRepo := postgres.NewRequisitionRepository(db.DB)
 
 	// Create validator service
 	validatorService := service.NewValidatorService()
@@ -60,22 +60,22 @@ func NewServer(config *config.Config, db *postgres.DB) *Server {
 	// Create services
 	authService := service.NewAuthService(userRepo, config)
 	userService := service.NewUserService(userRepo)
-	bankAccountService := service.NewBankAccountService(bankAccountRepo, gclItemRepo, userRepo)
-	gclService := service.NewGclService(gclItemRepo, bankAccountRepo, userRepo, gocardlessClient)
+	// bankAccountService := service.NewBankAccountService(bankAccountRepo, userRepo)
+	gclService := service.NewGclService(bankAccountRepo, userRepo, requisitionRepo, gocardlessClient)
 
 	// Create services container
 	services := &service.Services{
-		Auth:        authService,
-		User:        userService,
-		GoCardless:  gclService,
-		BankAccount: bankAccountService,
-		Validator:   validatorService,
+		Auth:       authService,
+		User:       userService,
+		GoCardless: gclService,
+		// BankAccount: bankAccountService,
+		Validator: validatorService,
 	}
 
 	// Create handlers
 	authHandler := handlers.NewAuthHandler(authService, validatorService)
 	userHandler := handlers.NewUserHandler(userService, validatorService)
-	gclHandler := handlers.NewGclHandler(gclService, validatorService)
+	gclHandler := handlers.NewGclHandler(gclService, validatorService, config)
 
 	// Create handlers container
 	handlers := &handlers.Handlers{

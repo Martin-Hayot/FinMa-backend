@@ -30,15 +30,17 @@ type BankAccountRepository interface {
 	ExistsByAccountID(ctx context.Context, accountID string) (bool, error)
 }
 
-// GclItemRepository defines operations for GoCardless item data access
-type GclItemRepository interface {
-	// Basic CRUD operations
-	Create(ctx context.Context, gclItem *domain.GclItem) error
-	GetByID(ctx context.Context, id uuid.UUID) (*domain.GclItem, error)
-	GetByUserID(ctx context.Context, userID uuid.UUID) ([]domain.GclItem, error)
-	GetByAccessToken(ctx context.Context, accessToken string) (*domain.GclItem, error)
-	GetByProviderName(ctx context.Context, userID uuid.UUID, providerName string) (*domain.GclItem, error)
-	Update(ctx context.Context, gclItem *domain.GclItem) error
-	Delete(ctx context.Context, id uuid.UUID) error
-	DeleteByUserID(ctx context.Context, userID uuid.UUID) error
+type RequisitionRepository interface {
+	// Create adds a new requisition to the database
+	Create(ctx context.Context, requisition *domain.Requisition) error
+	// Update modifies an existing requisition
+	Update(ctx context.Context, requisition *domain.Requisition) error
+	// GetByID retrieves a requisition by its ID
+	GetByID(ctx context.Context, id string) (*domain.Requisition, error)
+	// GetByReference retrieves a requisition by its reference
+	GetByReference(ctx context.Context, reference string) (*domain.Requisition, error)
+	// GetByUserID retrieves all requisitions for a user
+	GetByUserID(ctx context.Context, userID uuid.UUID) ([]domain.Requisition, error)
+	// GetByUserIDAndInstitutionID retrieves a requisition by user ID and institution ID
+	GetByUserIDAndInstitutionID(ctx context.Context, userID uuid.UUID, institutionID string) (*domain.Requisition, error)
 }

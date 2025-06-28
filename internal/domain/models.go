@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type User struct {
@@ -16,16 +17,35 @@ type User struct {
 	IsVerified bool `gorm:"default:false"`
 
 	// Associations
-	GoCardlessItems []GclItem      `gorm:"foreignKey:UserID"`
-	BankAccounts    []BankAccount  `gorm:"foreignKey:UserID"`
-	Transactions    []Transaction  `gorm:"foreignKey:UserID"`
-	Budgets         []Budget       `gorm:"foreignKey:UserID"`
-	Notifications   []Notification `gorm:"foreignKey:UserID"`
-	RefreshTokens   []RefreshToken `gorm:"foreignKey:UserID"`
+	Requisitions  []Requisition  `gorm:"foreignKey:UserID"`
+	BankAccounts  []BankAccount  `gorm:"foreignKey:UserID"`
+	Transactions  []Transaction  `gorm:"foreignKey:UserID"`
+	Budgets       []Budget       `gorm:"foreignKey:UserID"`
+	Notifications []Notification `gorm:"foreignKey:UserID"`
+	RefreshTokens []RefreshToken `gorm:"foreignKey:UserID"`
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DeletedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"` // Soft delete
+}
+
+type Requisition struct {
+	ID            string `gorm:"primaryKey;not null" json:"id"` // GoCardless Requisition ID as primary key
+	Status        string `gorm:"not null" json:"status"`        // e.g., "created", "redirected", "linked", "expired"
+	RedirectURI   string `gorm:"not null" json:"redirect_uri"`
+	InstitutionID string `gorm:"not null" json:"institution_id"`
+	Link          string `json:"link"`      // Authorization link provided by GoCardless
+	Reference     string `json:"reference"` // Unique ID for internal reference
+
+	UserID uuid.UUID `gorm:"not null;index" json:"user_id"`
+	User   User      `gorm:"foreignKey:UserID" json:"-"`
+
+	// Association with bank accounts
+	BankAccounts []BankAccount `gorm:"foreignKey:RequisitionID" json:"bank_accounts,omitempty"`
+
+	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
 }
 
 type EmailVerificationToken struct {
@@ -48,24 +68,6 @@ type RefreshToken struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type GclItem struct {
-	ID           uuid.UUID  `gorm:"primaryKey" json:"id"`
-	AccessToken  string     `gorm:"uniqueIndex;not null" json:"-"` // Hidden from JSON
-	RefreshToken string     `gorm:"not null" json:"-"`             // Hidden from JSON
-	ProviderName string     `gorm:"not null" json:"provider_name"`
-	ExpiresAt    *time.Time `json:"expires_at"`
-	LastSyncTime *time.Time `json:"last_sync_time"`
-
-	UserID uuid.UUID `gorm:"not null;index" json:"user_id"`
-	User   User      `gorm:"foreignKey:UserID" json:"-"`
-
-	// Association with bank accounts - fix the foreign key reference
-	BankAccounts []BankAccount `gorm:"foreignKey:GclItemID" json:"bank_accounts,omitempty"`
-
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
 type BankAccount struct {
 	ID               uuid.UUID `gorm:"primaryKey" json:"id"`
 	AccountID        string    `gorm:"uniqueIndex;not null" json:"account_id"` // GoCardless account ID
@@ -77,11 +79,10 @@ type BankAccount struct {
 	BalanceCurrent   float64   `json:"balance_current"`
 	IBAN             string    `json:"iban,omitempty"`
 
-	UserID uuid.UUID `gorm:"not null;index" json:"user_id"`
-	User   User      `gorm:"foreignKey:UserID" json:"-"`
-
-	GclItemID uuid.UUID `gorm:"not null;index" json:"gocardless_item_id"`
-	GclItem   GclItem   `gorm:"foreignKey:GclItemID" json:"-"`
+	UserID        uuid.UUID   `gorm:"not null;index" json:"user_id"`
+	User          User        `gorm:"foreignKey:UserID" json:"-"`
+	RequisitionID string      `gorm:"not null;index" json:"requisition_id"` // Link to requisition
+	Requisition   Requisition `gorm:"foreignKey:RequisitionID" json:"-"`
 
 	// Association with transactions
 	Transactions []Transaction `gorm:"foreignKey:BankAccountID" json:"transactions,omitempty"`
@@ -106,7 +107,6 @@ type Transaction struct {
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	DeletedAt time.Time `json:"deleted_at"`
 }
 
 type Budget struct {
@@ -121,7 +121,6 @@ type Budget struct {
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	DeletedAt time.Time `json:"deleted_at"`
 }
 
 type Notification struct {
@@ -135,5 +134,4 @@ type Notification struct {
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	DeletedAt time.Time `json:"deleted_at"`
 }
