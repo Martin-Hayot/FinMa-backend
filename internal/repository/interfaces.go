@@ -24,9 +24,9 @@ type BankAccountRepository interface {
 	Update(ctx context.Context, bankAccount *domain.BankAccount) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	GetByID(ctx context.Context, id uuid.UUID) (domain.BankAccount, error)
+	GetUserAccountsWithBalance(ctx context.Context, userID uuid.UUID) ([]domain.BankAccount, error)
 	GetByUserID(ctx context.Context, userID uuid.UUID) ([]domain.BankAccount, error)
-	GetByAccountID(ctx context.Context, accountID string) (domain.BankAccount, error)
-	GetByGclItemID(ctx context.Context, gclItemID uuid.UUID) ([]domain.BankAccount, error)
+	GetByAccountID(ctx context.Context, accountID string) (*domain.BankAccount, error)
 	ExistsByAccountID(ctx context.Context, accountID string) (bool, error)
 }
 
@@ -43,4 +43,13 @@ type RequisitionRepository interface {
 	GetByUserID(ctx context.Context, userID uuid.UUID) ([]domain.Requisition, error)
 	// GetByUserIDAndInstitutionID retrieves a requisition by user ID and institution ID
 	GetByUserIDAndInstitutionID(ctx context.Context, userID uuid.UUID, institutionID string) (*domain.Requisition, error)
+}
+
+// TransactionRepository defines operations for transaction data access
+type TransactionRepository interface {
+	Create(ctx context.Context, transaction *domain.Transaction) error
+	CreateInBatches(ctx context.Context, transactions []*domain.Transaction) error
+	GetByBankAccountID(ctx context.Context, bankAccountID uuid.UUID) ([]domain.Transaction, error)
+	GetByTransactionID(ctx context.Context, transactionID string) (domain.Transaction, error)
+	ExistsByTransactionID(ctx context.Context, transactionID string) (bool, error)
 }

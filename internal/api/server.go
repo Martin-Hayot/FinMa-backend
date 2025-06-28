@@ -53,6 +53,7 @@ func NewServer(config *config.Config, db *postgres.DB) *Server {
 	userRepo := postgres.NewUserRepository(db.DB)
 	bankAccountRepo := postgres.NewBankAccountRepository(db.DB)
 	requisitionRepo := postgres.NewRequisitionRepository(db.DB)
+	transactionRepo := postgres.NewTransactionRepository(db.DB)
 
 	// Create validator service
 	validatorService := service.NewValidatorService()
@@ -60,35 +61,37 @@ func NewServer(config *config.Config, db *postgres.DB) *Server {
 	// Create services
 	authService := service.NewAuthService(userRepo, config)
 	userService := service.NewUserService(userRepo)
-	// bankAccountService := service.NewBankAccountService(bankAccountRepo, userRepo)
-	gclService := service.NewGclService(bankAccountRepo, userRepo, requisitionRepo, gocardlessClient)
+	bankAccountService := service.NewBankAccountService(bankAccountRepo)
+	gclService := service.NewGclService(bankAccountRepo, userRepo, requisitionRepo, transactionRepo, gocardlessClient)
 
 	// Create services container
 	services := &service.Services{
-		Auth:       authService,
-		User:       userService,
-		GoCardless: gclService,
-		// BankAccount: bankAccountService,
-		Validator: validatorService,
+		Auth:        authService,
+		User:        userService,
+		GoCardless:  gclService,
+		BankAccount: bankAccountService,
+		Validator:   validatorService,
 	}
 
 	// Create handlers
 	authHandler := handlers.NewAuthHandler(authService, validatorService)
 	userHandler := handlers.NewUserHandler(userService, validatorService)
 	gclHandler := handlers.NewGclHandler(gclService, validatorService, config)
+	bankAccountHandler := handlers.NewBankAccountHandler(bankAccountService)
 
 	// Create handlers container
 	handlers := &handlers.Handlers{
-		Auth:       *authHandler,
-		User:       *userHandler,
-		GoCardless: *gclHandler,
+		Auth:        *authHandler,
+		User:        *userHandler,
+		GoCardless:  *gclHandler,
+		BankAccount: *bankAccountHandler,
 	}
 
 	// Initialize GoCardless token on startup and then refresh every 12 hours
 	go func() {
 		// Get initial token on startup
 		log.Info("Initializing GoCardless token on startup")
-		if err := gclService.RefreshTokenIfNeeded(); err != nil {
+		if err := gclService.RefreshTokenIfNeeded(context.Background()); err != nil {
 			log.Error("Failed to initialize GoCardless token", "error", err)
 		} else {
 			log.Info("GoCardless token initialized successfully")
@@ -100,7 +103,7 @@ func NewServer(config *config.Config, db *postgres.DB) *Server {
 
 		for range ticker.C {
 			log.Info("Refreshing GoCardless token (scheduled)")
-			if err := gclService.RefreshTokenIfNeeded(); err != nil {
+			if err := gclService.RefreshTokenIfNeeded(context.Background()); err != nil {
 				log.Error("Failed to refresh GoCardless token", "error", err)
 			} else {
 				log.Info("GoCardless token refreshed successfully")

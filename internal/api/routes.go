@@ -32,11 +32,15 @@ func SetupRoutes(app *fiber.App, services *service.Services, handlers *handlers.
 	gocardless := protected.Group("/gocardless")
 	gocardless.Get("/institutions/:country_code", handlers.GoCardless.GetInstitutions)
 	gocardless.Post("/link", handlers.GoCardless.LinkAccount)
-	gocardless.Put("/requisitions/:id", handlers.GoCardless.SyncRequisition)
+	gocardless.Patch("/requisitions/:id", handlers.GoCardless.SyncRequisition)
 	gocardless.Get("/token/status", handlers.GoCardless.GetTokenStatus)
 
-	// accounts := protected.Group("/accounts")
-	// accounts.Get("/", handlers.BankAccount.GetAccounts)
+	// Bank Account routes
+	bankAccounts := protected.Group("/bank-accounts")
+	bankAccounts.Get("/", handlers.BankAccount.GetAccounts)
+
+	accounts := protected.Group("/accounts")
+	accounts.Get("/", handlers.BankAccount.GetAccounts)
 	// accounts.Get("/:id", handlers.BankAccount.GetAccountDetails)
 	// accounts.Get("/:id/balances", handlers.BankAccount.GetAccountBalances)
 	// accounts.Get("/:id/transactions", handlers.BankAccount.GetAccountTransactions)
