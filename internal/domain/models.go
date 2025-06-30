@@ -4,33 +4,56 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type User struct {
-	ID            uuid.UUID      `json:"id" gorm:"primary_key"`
-	FirstName     string         `json:"firstName" validate:"required"`
-	LastName      string         `json:"lastName" validate:"required"`
-	Email         string         `json:"email" gorm:"uniqueIndex" validate:"required,email"`
-	Password      string         `json:"password" validate:"required"`
-	Role          string         `json:"role"`
-	Transactions  []Transaction  `json:"transactions" gorm:"foreignKey:UserID"`
-	BankAccounts  []BankAccount  `json:"bank_accounts" gorm:"foreignKey:UserID"`
-	Budgets       []Budget       `json:"budgets" gorm:"foreignKey:UserID"`
-	Notifications []Notification `json:"notifications" gorm:"foreignKey:UserID"`
-	RefreshTokens []RefreshToken `json:"refresh_tokens" gorm:"foreignKey:UserID"`
-	IsVerified bool     `gorm:"default:false" json:"is_verified"`
+	ID         uuid.UUID `gorm:"primary_key"`
+	FirstName  string    `validate:"required"`
+	LastName   string    `validate:"required"`
+	Email      string    `gorm:"uniqueIndex" validate:"required,email"`
+	Password   string    `validate:"required"`
+	Role       string
+	IsVerified bool `gorm:"default:false"`
 
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	DeletedAt time.Time `json:"deleted_at"`
+	// Associations
+	Requisitions  []Requisition  `gorm:"foreignKey:UserID"`
+	BankAccounts  []BankAccount  `gorm:"foreignKey:UserID"`
+	Transactions  []Transaction  `gorm:"foreignKey:UserID"`
+	Budgets       []Budget       `gorm:"foreignKey:UserID"`
+	Notifications []Notification `gorm:"foreignKey:UserID"`
+	RefreshTokens []RefreshToken `gorm:"foreignKey:UserID"`
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"` // Soft delete
+}
+
+type Requisition struct {
+	ID            string `gorm:"primaryKey;not null" json:"id"` // GoCardless Requisition ID as primary key
+	Status        string `gorm:"not null" json:"status"`        // e.g., "created", "redirected", "linked", "expired"
+	RedirectURI   string `gorm:"not null" json:"redirect_uri"`
+	InstitutionID string `gorm:"not null" json:"institution_id"`
+	Link          string `json:"link"`      // Authorization link provided by GoCardless
+	Reference     string `json:"reference"` // Unique ID for internal reference
+
+	UserID uuid.UUID `gorm:"not null;index" json:"user_id"`
+	User   User      `gorm:"foreignKey:UserID" json:"-"`
+
+	// Association with bank accounts
+	BankAccounts []BankAccount `gorm:"foreignKey:RequisitionID" json:"bank_accounts,omitempty"`
+
+	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
 }
 
 type EmailVerificationToken struct {
-    ID        uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
-    UserID    uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
-    Token     string    `gorm:"not null" json:"token"`
-    ExpiresAt time.Time `gorm:"not null" json:"expires_at"`
-    CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
+	UserID    uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
+	Token     string    `gorm:"not null" json:"token"`
+	ExpiresAt time.Time `gorm:"not null" json:"expires_at"`
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
 
 type RefreshToken struct {
@@ -46,19 +69,26 @@ type RefreshToken struct {
 }
 
 type BankAccount struct {
-	ID            uuid.UUID `json:"id" gorm:"primary_key"`
-	BankName      string    `json:"bank_name"`
-	AccountType   string    `json:"account_type"`
-	AccountNumber string    `json:"account_number" gorm:"uniqueIndex"`
-	Balance       float64   `json:"balance"`
+	ID               uuid.UUID `gorm:"primaryKey" json:"id"`
+	AccountID        string    `gorm:"uniqueIndex;not null" json:"account_id"` // GoCardless account ID
+	Name             string    `gorm:"not null" json:"name"`
+	Type             string    `gorm:"not null" json:"type"`
+	Currency         string    `gorm:"not null" json:"currency"`
+	InstitutionName  string    `json:"institution_name"`
+	BalanceAvailable float64   `json:"balance_available"`
+	BalanceCurrent   float64   `json:"balance_current"`
+	IBAN             string    `json:"iban,omitempty"`
 
-	UserID       uuid.UUID     `json:"user_id"`
-	User         User          `json:"user"`
-	Transactions []Transaction `json:"transactions" gorm:"foreignKey:BankAccountID"`
+	UserID        uuid.UUID   `gorm:"not null;index" json:"user_id"`
+	User          User        `gorm:"foreignKey:UserID" json:"-"`
+	RequisitionID string      `gorm:"not null;index" json:"requisition_id"` // Link to requisition
+	Requisition   Requisition `gorm:"foreignKey:RequisitionID" json:"-"`
+
+	// Association with transactions
+	Transactions []Transaction `gorm:"foreignKey:BankAccountID" json:"transactions,omitempty"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	DeletedAt time.Time `json:"deleted_at"`
 }
 
 type Transaction struct {
@@ -77,7 +107,6 @@ type Transaction struct {
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	DeletedAt time.Time `json:"deleted_at"`
 }
 
 type Budget struct {
@@ -92,7 +121,6 @@ type Budget struct {
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	DeletedAt time.Time `json:"deleted_at"`
 }
 
 type Notification struct {
@@ -106,5 +134,4 @@ type Notification struct {
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	DeletedAt time.Time `json:"deleted_at"`
 }

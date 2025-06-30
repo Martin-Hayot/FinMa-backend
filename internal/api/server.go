@@ -17,6 +17,7 @@ import (
 	"FinMa/internal/api/handlers"
 	"FinMa/internal/repository/postgres"
 	"FinMa/internal/service"
+	"FinMa/pkg/gocardless"
 )
 
 // Server represents the API server
@@ -39,36 +40,76 @@ func NewServer(config *config.Config, db *postgres.DB) *Server {
 	app.Use(recover.New())
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     "http://localhost:3000, http://localhost:8080",
-		AllowMethods:     "POST, GET, OPTIONS, PUT, DELETE",
+		AllowMethods:     "POST, GET, PATCH, OPTIONS, PUT, DELETE",
 		AllowHeaders:     "Content-Type, Authorization, Accept, Origin, Access-Control-Allow-Origin",
 		ExposeHeaders:    "Set-Cookie",
 		AllowCredentials: true,
 	}))
 
+	// Create Gocardless client
+	gocardlessClient := gocardless.NewClient(config.GoCardless.ClientID, config.GoCardless.Secret)
+
 	// Create repositories
 	userRepo := postgres.NewUserRepository(db.DB)
+	bankAccountRepo := postgres.NewBankAccountRepository(db.DB)
+	requisitionRepo := postgres.NewRequisitionRepository(db.DB)
+	transactionRepo := postgres.NewTransactionRepository(db.DB)
+
 	// Create validator service
 	validatorService := service.NewValidatorService()
 
 	// Create services
 	authService := service.NewAuthService(userRepo, config)
-	userService := service.NewUserService(userRepo, validatorService)
+	userService := service.NewUserService(userRepo)
+	bankAccountService := service.NewBankAccountService(bankAccountRepo)
+	gclService := service.NewGclService(bankAccountRepo, userRepo, requisitionRepo, transactionRepo, gocardlessClient)
+
 	// Create services container
 	services := &service.Services{
-		Auth:      authService,
-		User:      userService,
-		Validator: validatorService,
+		Auth:        authService,
+		User:        userService,
+		GoCardless:  gclService,
+		BankAccount: bankAccountService,
+		Validator:   validatorService,
 	}
 
 	// Create handlers
 	authHandler := handlers.NewAuthHandler(authService, validatorService)
 	userHandler := handlers.NewUserHandler(userService, validatorService)
+	gclHandler := handlers.NewGclHandler(gclService, validatorService, config)
+	bankAccountHandler := handlers.NewBankAccountHandler(bankAccountService)
 
 	// Create handlers container
 	handlers := &handlers.Handlers{
-		Auth: *authHandler,
-		User: *userHandler,
+		Auth:        *authHandler,
+		User:        *userHandler,
+		GoCardless:  *gclHandler,
+		BankAccount: *bankAccountHandler,
 	}
+
+	// Initialize GoCardless token on startup and then refresh every 12 hours
+	go func() {
+		// Get initial token on startup
+		log.Info("Initializing GoCardless token on startup")
+		if err := gclService.RefreshTokenIfNeeded(context.Background()); err != nil {
+			log.Error("Failed to initialize GoCardless token", "error", err)
+		} else {
+			log.Info("GoCardless token initialized successfully")
+		}
+
+		// Set up ticker for periodic refresh
+		ticker := time.NewTicker(12 * time.Hour)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			log.Info("Refreshing GoCardless token (scheduled)")
+			if err := gclService.RefreshTokenIfNeeded(context.Background()); err != nil {
+				log.Error("Failed to refresh GoCardless token", "error", err)
+			} else {
+				log.Info("GoCardless token refreshed successfully")
+			}
+		}
+	}()
 
 	// Create server
 	server := &Server{

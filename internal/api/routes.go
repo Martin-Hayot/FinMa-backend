@@ -24,24 +24,24 @@ func SetupRoutes(app *fiber.App, services *service.Services, handlers *handlers.
 	protected := api.Group("", middleware.AuthMiddleware(services.Auth))
 	protected.Get("/me", handlers.Auth.Me)
 
-	// Transaction routes
-	// transactions := protected.Group("/transactions")
-	// transactions.Get("/", handlers.Transaction.GetAll)
-	// transactions.Post("/", handlers.Transaction.Create)
-	// transactions.Get("/:id", handlers.Transaction.GetByID)
-	// transactions.Put("/:id", handlers.Transaction.Update)
-	// transactions.Delete("/:id", handlers.Transaction.Delete)
+	// User routes
+	users := protected.Group("/users")
+	users.Patch("/:id", handlers.User.Update)
 
-	// Budget routes
-	// budgets := protected.Group("/budgets")
-	// budgets.Get("/", handlers.Budget.GetAll)
-	// budgets.Post("/", handlers.Budget.Create)
-	// budgets.Get("/:id", handlers.Budget.GetByID)
-	// budgets.Put("/:id", handlers.Budget.Update)
-	// budgets.Delete("/:id", handlers.Budget.Delete)
+	// GoCardless routes
+	gocardless := protected.Group("/gocardless")
+	gocardless.Get("/institutions/:country_code", handlers.GoCardless.GetInstitutions)
+	gocardless.Post("/link", handlers.GoCardless.LinkAccount)
+	gocardless.Patch("/requisitions/:id", handlers.GoCardless.SyncRequisition)
+	gocardless.Get("/token/status", handlers.GoCardless.GetTokenStatus)
 
-	// Settings routes
-	// settings := protected.Group("/settings")
-	// settings.Get("/", handlers.Settings.Get)
-	// settings.Put("/", handlers.Settings.Update)
+	// Bank Account routes
+	bankAccounts := protected.Group("/bank-accounts")
+	bankAccounts.Get("/", handlers.BankAccount.GetAccounts)
+
+	accounts := protected.Group("/accounts")
+	accounts.Get("/", handlers.BankAccount.GetAccounts)
+	// accounts.Get("/:id", handlers.BankAccount.GetAccountDetails)
+	// accounts.Get("/:id/balances", handlers.BankAccount.GetAccountBalances)
+	// accounts.Get("/:id/transactions", handlers.BankAccount.GetAccountTransactions)
 }

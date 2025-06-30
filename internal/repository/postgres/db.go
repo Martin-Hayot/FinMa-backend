@@ -6,7 +6,6 @@ import (
 	"github.com/charmbracelet/log"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 
 	"FinMa/config"
 	"FinMa/internal/domain"
@@ -26,9 +25,7 @@ func NewDB(config *config.Config) (*DB, error) {
 
 	log.Info("Connecting to database", "host", config.Database.Host, "database", config.Database.Name)
 
-	gormConfig := &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	}
+	gormConfig := &gorm.Config{}
 
 	// Connect to database
 	db, err := gorm.Open(postgres.Open(dsn), gormConfig)
@@ -59,9 +56,13 @@ func (db *DB) Migrate() error {
 	// List all models to auto-migrate
 	err := db.DB.AutoMigrate(
 		&domain.User{},
-		&domain.Transaction{},
-		&domain.Budget{},
 		&domain.BankAccount{},
+		&domain.Transaction{},
+		&domain.Requisition{},
+		&domain.Budget{},
+		&domain.Notification{},
+		&domain.RefreshToken{},
+		&domain.EmailVerificationToken{},
 	)
 
 	if err != nil {
