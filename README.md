@@ -63,7 +63,8 @@ FinMa-backend/
 │   ├── repository/     # Data access layer
 │   │   ├── postgres/   # PostgreSQL implementation
 │   ├── service/        # Business logic layer
-├── plaid/              # Plaid API integration
+├── pkg/                # External APIs
+│   ├── gocardless/     # GoCardless Client and API interactions
 ├── utils/              # Utility functions
 ├── main.go             # Application entry point
 ```
@@ -74,7 +75,7 @@ FinMa-backend/
 - Database: PostgreSQL with GORM for ORM functionality
 - API: RESTful API built with Fiber framework
 - Validation: Request validation using go-playground/validator
-- Plaid Integration: Financial account connectivity through Plaid API
+- GoCardless Integration: Bank account data API
 - Email Services: Transactional emails with Resend
 ### Important Files
 - main.go: Application entry point
@@ -85,17 +86,17 @@ FinMa-backend/
 - auth.go: Authentication business logic
 
 ### Technologies
-Go 1.23
-Fiber web framework
-GORM ORM
-PostgreSQL
-JWT authentication
-Plaid API
-Docker & Docker Compose
+- Go 1.23
+- Fiber web framework
+- GORM ORM
+- PostgreSQL
+- JWT authentication
+- GoCardless Bank Account API
+- Docker & Docker Compose
 
 ---
 
-## MakeFile
+## MakeFile Commands
 
 run all make commands 
 ```bash
