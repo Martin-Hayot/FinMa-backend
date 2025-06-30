@@ -62,7 +62,7 @@ func (r *UserRepository) ExistsByEmail(ctx context.Context, email string) (bool,
 
 // Update updates a user in the database
 func (r *UserRepository) Update(ctx context.Context, user *domain.User) error {
-	return r.db.WithContext(ctx).Save(user).Error
+	return r.db.WithContext(ctx).Updates(user).Error
 }
 
 // Delete deletes a user from the database

@@ -35,7 +35,6 @@ type userService struct {
 	userRepo repository.UserRepository
 	// preferenceRepo  repository.UserPreferenceRepository
 	// transactionRepo repository.TransactionRepository
-	validator ValidatorService
 }
 
 // UpdateProfile updates a user's profile information
@@ -121,12 +120,10 @@ func NewUserService(
 	userRepo repository.UserRepository,
 	// preferenceRepo repository.UserPreferenceRepository,
 	// transactionRepo repository.TransactionRepository,
-	validator ValidatorService,
 ) UserService {
 	return &userService{
 		userRepo: userRepo,
 		// preferenceRepo:  preferenceRepo,
 		// transactionRepo: transactionRepo,
-		validator: validator,
 	}
 }
