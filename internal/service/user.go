@@ -28,13 +28,17 @@ type UserService interface {
 	// UpdateUserPreferences(ctx context.Context, userID uuid.UUID, req dto.UpdatePreferencesRequest) error
 
 	// User analytics
-	// GetFinancialSummary(ctx context.Context, userID uuid.UUID) (dto.FinancialSummaryResponse, error)
+	GetUserSummary(ctx context.Context, userID uuid.UUID) (dto.UserSummaryResponse, error)
 }
 
 type userService struct {
 	userRepo repository.UserRepository
 	// preferenceRepo  repository.UserPreferenceRepository
 	// transactionRepo repository.TransactionRepository
+}
+
+func (s *userService) GetUserSummary(ctx context.Context, userID uuid.UUID) (dto.UserSummaryResponse, error) {
+	return dto.UserSummaryResponse{}, errors.New("not implemented")
 }
 
 // UpdateProfile updates a user's profile information

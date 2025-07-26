@@ -141,3 +141,26 @@ func (h *UserHandler) Update(c *fiber.Ctx) error {
 
 	return c.JSON(updatedUser)
 }
+
+func (h *UserHandler) GetSummary(c *fiber.Ctx) error {
+	ctx := c.Context()
+
+	// Get user ID from context (set by auth middleware)
+	user, ok := c.Locals("user").(domain.User)
+	if !ok {
+		log.Error("Failed to get user ID from context")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Not authenticated",
+		})
+	}
+
+	summary, err := h.userService.GetUserSummary(ctx, user.ID)
+	if err != nil {
+		log.Error("Failed to get user summary", "error", err, "userID", user.ID)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to retrieve user summary",
+		})
+	}
+
+	return c.JSON(summary)
+}

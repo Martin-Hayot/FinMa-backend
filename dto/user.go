@@ -45,30 +45,10 @@ type UpdatePreferencesRequest struct {
 	WeeklyReports        *bool  `json:"weeklyReports"`
 }
 
-// FinancialSummaryResponse represents a user's financial overview
-type FinancialSummaryResponse struct {
-	CurrentMonth  MonthlySummary `json:"currentMonth"`
-	PreviousMonth MonthlySummary `json:"previousMonth"`
-	Changes       SummaryChanges `json:"changes"`
-}
-
-// MonthlySummary represents financial data for a specific month
-type MonthlySummary struct {
-	Income        float64           `json:"income"`
-	Expenses      float64           `json:"expenses"`
-	Savings       float64           `json:"savings"`
-	SavingsRate   float64           `json:"savingsRate,omitempty"`
-	TopCategories []CategoryExpense `json:"topCategories,omitempty"`
-}
-
-// CategoryExpense represents spending in a specific category
-type CategoryExpense struct {
-	Category string  `json:"category"`
-	Amount   float64 `json:"amount"`
-}
-
-// SummaryChanges represents month-over-month changes in financial metrics
-type SummaryChanges struct {
-	IncomeChange  float64 `json:"incomeChange"`
-	ExpenseChange float64 `json:"expenseChange"`
+type UserSummaryResponse struct {
+	TotalIncome            float64 `json:"totalIncome"`
+	TotalExpenses          float64 `json:"totalExpenses"`
+	TotalSavings           float64 `json:"totalSavings"`
+	AverageMonthlyIncome   float64 `json:"averageMonthlyIncome"`
+	AverageMonthlyExpenses float64 `json:"averageMonthlyExpenses"`
 }

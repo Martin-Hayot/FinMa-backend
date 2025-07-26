@@ -61,7 +61,7 @@ func (c *Client) CreateRequisition(ctx context.Context, UserID uuid.UUID, instit
 
 	jsonData, err := json.Marshal(dto.GoCardlessCreateRequisitionRequest{
 		InstitutionID: institutionID,
-		RedirectURL:   redirectURL,
+		Redirect:      redirectURL,
 		Reference:     uniqueReference, // Now unique per user-institution combination
 	})
 	if err != nil {
@@ -408,7 +408,6 @@ func (c *Client) GetAccountTransactions(ctx context.Context, accountID string) (
 
 	return &transactions, nil
 }
-
 
 // GetTokenStatus returns the current token status
 func (c *Client) GetTokenStatus() map[string]interface{} {

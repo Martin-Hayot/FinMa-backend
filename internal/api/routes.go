@@ -27,6 +27,7 @@ func SetupRoutes(app *fiber.App, services *service.Services, handlers *handlers.
 	// User routes
 	users := protected.Group("/users")
 	users.Patch("/:id", handlers.User.Update)
+	users.Get("/me/summary", handlers.User.GetSummary)
 
 	// GoCardless routes
 	gocardless := protected.Group("/gocardless")

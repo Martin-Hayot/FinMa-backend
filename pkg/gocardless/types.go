@@ -1,4 +1,4 @@
-package dto
+package gocardless
 
 type Institution struct {
 	ID        string   `json:"id"`
